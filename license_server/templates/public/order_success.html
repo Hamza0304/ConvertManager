@@ -1,0 +1,69 @@
+{% extends "public/base.html" %}
+
+{% block title %}Order Submitted{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <h2>Order Submitted Successfully</h2>
+    <p>Thank you, <strong>{{ order.customer_name }}</strong>. Your order has been received and is pending payment verification.</p>
+
+    <div class="card" style="margin: 2rem 0;">
+        <h3>Order Details</h3>
+        <dl class="order-details-list">
+            <div><dt>Order Number</dt><dd><strong>#{{ order.id }}</strong></dd></div>
+            <div><dt>Plan</dt><dd>{{ plan_name }}</dd></div>
+            <div><dt>Amount Due</dt><dd><strong>${{ '%.2f' % order.price }}</strong></dd></div>
+            <div><dt>Status</dt><dd><span class="status-badge status-pending">{{ order.payment_status }} - Awaiting Payment</span></dd></div>
+        </dl>
+    </div>
+
+    {% if payment.account_holder %}
+    <div class="card" style="margin: 2rem 0; border-left: 4px solid var(--info);">
+        <h3>💳 Bank Payment Details</h3>
+        <p>Please transfer the amount below to confirm your order. Use your <strong>Order Number (#{{ order.id }})</strong> as the payment reference.</p>
+        
+        <div class="card payment-details-card" style="margin: 1.5rem 0; border-left: 4px solid var(--primary);">
+            <dl class="order-details-list">
+                {% if payment.account_holder %}
+                <div><dt>Account Holder</dt><dd><strong>{{ payment.account_holder }}</strong></dd></div>
+                {% endif %}
+                {% if payment.bank_name %}
+                <div><dt>Bank</dt><dd>{{ payment.bank_name }}</dd></div>
+                {% endif %}
+                {% if payment.rib %}
+                <div><dt>RIB / Account Number</dt><dd><code style="background: var(--panel-hover); padding: 0.25rem 0.5rem; border-radius: 4px; font-family: monospace; color: var(--primary);">{{ payment.rib }}</code></dd></div>
+                {% endif %}
+                <div><dt>Payment Reference</dt><dd><code style="background: var(--panel-hover); padding: 0.25rem 0.5rem; border-radius: 4px; font-family: monospace; color: var(--success);">ORDER-{{ order.id }}</code></dd></div>
+                <div><dt>Amount</dt><dd><strong style="font-size: 1.2em; color: var(--info);">${{ '%.2f' % order.price }}</strong></dd></div>
+            </dl>
+        </div>
+
+        <div class="manual-payment-note">
+            <h4>📋 Next Steps</h4>
+            <ol style="margin: 0.5rem 0 0 1.5rem;">
+                <li style="margin: 0.5rem 0;">Complete the bank transfer using the details above</li>
+                <li style="margin: 0.5rem 0;">Use your Order Number as the payment reference</li>
+                <li style="margin: 0.5rem 0;">After payment is verified, your license key will be sent to <strong>{{ order.customer_email }}</strong></li>
+                <li style="margin: 0.5rem 0;">Enter your license key in ConvertManager to activate</li>
+            </ol>
+        </div>
+
+        {% if payment.instructions %}
+        <div class="manual-payment-note" style="margin-top: 1rem;">
+            <p><em>{{ payment.instructions }}</em></p>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="card" style="margin: 2rem 0; border-left: 4px solid var(--warning);">
+        <p style="color: var(--warning);">⚠️ Payment information is not currently configured. Please contact the administrator for payment details.</p>
+    </div>
+    {% endif %}
+
+    <div style="text-align: center; margin-top: 2rem;">
+        <a class="primary-button" href="{{ url_for('public.plans') }}">Back to Plans</a>
+    </div>
+</div>
+
+
+{% endblock %}

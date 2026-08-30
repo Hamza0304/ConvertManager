@@ -1,0 +1,61 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="muted">Manage licenses, devices, and customer access.</p>
+    </div>
+</div>
+
+<div class="grid">
+
+
+<div class="card">
+    <div class="card-label">Total Licenses</div>
+    <div class="metric">{{ metrics.total }}</div>
+</div>
+
+<div class="card">
+    <div class="card-label">Active Licenses</div>
+    <div class="metric">
+        {{ metrics.active }}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-label">Expired</div>
+    <div class="metric">
+        {{ metrics.expired }}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-label">Revoked</div>
+    <div class="metric">
+        {{ metrics.revoked }}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-label">Active Devices</div>
+    <div class="metric">{{ active_devices }}</div>
+</div>
+
+<div class="card">
+    <div class="card-label">Pending Orders</div>
+    <div class="metric">{{ pending_orders }}</div>
+</div>
+
+</div>
+
+<div class="page-header">
+    <div>
+        <a class="primary-button" href="{{ url_for('admin.orders') }}">View Orders</a>
+    </div>
+</div>
+
+{% endblock %}

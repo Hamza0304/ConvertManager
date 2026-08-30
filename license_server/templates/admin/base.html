@@ -1,0 +1,147 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<title>{% block title %}ConvertManager Admin{% endblock %}</title>
+
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}">
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+
+
+</head>
+
+<body>
+
+
+<div class="app-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-icon">C</div>
+
+            <div class="brand-text">
+                <strong>ConvertManager</strong>
+                <span>License Manager</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <div class="nav-section">
+                <span class="nav-label">MAIN</span>
+
+                <a href="{{ url_for('admin.dashboard') }}"
+                   class="nav-link">
+                    <span class="nav-icon">⌂</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a href="{{ url_for('admin.licenses') }}"
+                   class="nav-link">
+                    <span class="nav-icon">▣</span>
+                    <span>Licenses</span>
+                </a>
+
+                <a href="{{ url_for('admin.orders') }}"
+                   class="nav-link">
+                    <span class="nav-icon">◫</span>
+                    <span>Orders</span>
+                </a>
+
+                <a href="{{ url_for('admin.devices') }}"
+                   class="nav-link">
+                    <span class="nav-icon">▤</span>
+                    <span>Devices</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <span class="nav-label">SYSTEM</span>
+
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">⚙</span>
+                    <span>Settings</span>
+                </a>
+            </div>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="admin-profile">
+                <div class="avatar">A</div>
+
+                <div class="admin-info">
+                    <strong>Administrator</strong>
+                    <span>License Manager</span>
+                </div>
+            </div>
+
+            <a href="{{ url_for('admin.logout') }}"
+               class="logout-link">
+                <span>↪</span>
+                Logout
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- Main Area -->
+    <div class="main-area">
+
+        <!-- Topbar -->
+        <header class="topbar">
+
+            <div>
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                <p>{% block page_subtitle %}Manage your licenses and devices{% endblock %}</p>
+            </div>
+
+            <div class="topbar-status">
+                <span class="status-dot"></span>
+                System Online
+            </div>
+
+        </header>
+
+
+        <!-- Content -->
+        <main class="content">
+
+            {% with messages = get_flashed_messages() %}
+
+                {% for message in messages %}
+
+                    <div class="flash">
+                        <span>✓</span>
+                        {{ message }}
+                    </div>
+
+                {% endfor %}
+
+            {% endwith %}
+
+
+            {% block content %}
+
+            {% endblock %}
+
+        </main>
+
+    </div>
+
+</div>
+
+
+</body>
+</html>

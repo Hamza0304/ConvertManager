@@ -1,0 +1,143 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+License Created - ConvertManager
+{% endblock %}
+
+{% block page_title %}
+License Created
+{% endblock %}
+
+
+{% block content %}
+
+<div class="success-page">
+
+    <div class="success-card">
+
+        <div class="success-icon">
+            ✓
+        </div>
+
+        <h2>License Created Successfully</h2>
+
+        <p>
+            The license has been generated successfully.
+            Save the license key and provide it to your customer.
+        </p>
+
+
+        <div class="license-key-box">
+
+            <span>LICENSE KEY</span>
+
+            <div
+                id="license-key"
+                class="license-key-value"
+                data-key="{{ license_key }}"
+            >
+
+                {{ license_key }}
+
+                <button
+                    type="button"
+                    class="copy-btn"
+                    onclick="copyLicense()">
+
+                    Copy
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="license-info-grid">
+
+            <div>
+
+                <span>Plan</span>
+
+                <strong>
+                    {{ license.plan }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>Customer</span>
+
+                <strong>
+                    {{ license.customer_name or '—' }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>Maximum Devices</span>
+
+                <strong>
+                    {{ license.max_devices }}
+                </strong>
+
+            </div>
+
+
+            <div>
+
+                <span>Expiration</span>
+
+                <strong>
+                    {{ license.expires_at or 'Never' }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="form-actions">
+
+            <a href="{{ url_for('admin.licenses') }}"
+               class="btn btn-secondary">
+
+                Back to Licenses
+
+            </a>
+
+            <a href="{{ url_for('admin.create_license_page') }}"
+               class="btn btn-primary">
+
+                Create Another
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+function copyLicense() {
+    const key = document.getElementById("license-key").dataset.key;
+
+    navigator.clipboard.writeText(key).then(() => {
+        const button = document.querySelector(".copy-btn");
+
+        button.textContent = "Copied!";
+
+        setTimeout(() => {
+            button.textContent = "Copy";
+        }, 2000);
+    });
+}
+</script>
+
+{% endblock %}

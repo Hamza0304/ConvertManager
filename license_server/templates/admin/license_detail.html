@@ -1,0 +1,353 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+License Details - ConvertManager
+{% endblock %}
+
+{% block page_title %}
+License Details
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <p class="page-description">
+            View and manage this license.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('admin.licenses') }}"
+       class="btn btn-secondary">
+
+        ← Back to Licenses
+
+    </a>
+
+</div>
+
+
+<div class="detail-grid">
+
+
+    <!-- License information -->
+
+    <div class="detail-card">
+
+        <div class="detail-card-header">
+
+            <div>
+
+                <span class="card-label">
+                    LICENSE
+                </span>
+
+                <h3>
+                    License Information
+                </h3>
+
+            </div>
+
+            <span class="status-badge {{ license.status|lower }}">
+                {{ license.status }}
+            </span>
+
+        </div>
+
+
+        <div class="detail-list">
+
+            <div class="detail-row">
+
+                <span>License Key</span>
+
+                <strong>
+                    {{ license.key_masked }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Plan</span>
+
+                <strong>
+                    {{ license.plan }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Created</span>
+
+                <strong>
+                    {{ license.created_at }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Activated</span>
+
+                <strong>
+                    {{ license.activated_at or 'Not activated' }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Expiration</span>
+
+                <strong>
+                    {{ license.expires_at or 'Never' }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Maximum Devices</span>
+
+                <strong>
+                    {{ license.max_devices }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Customer -->
+
+    <div class="detail-card">
+
+        <div class="detail-card-header">
+
+            <div>
+
+                <span class="card-label">
+                    CUSTOMER
+                </span>
+
+                <h3>
+                    Customer Information
+                </h3>
+
+            </div>
+
+        </div>
+
+
+        <div class="detail-list">
+
+            <div class="detail-row">
+
+                <span>Name</span>
+
+                <strong>
+                    {{ license.customer_name or '—' }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Email</span>
+
+                <strong>
+                    {{ license.customer_email or '—' }}
+                </strong>
+
+            </div>
+
+
+            <div class="detail-row">
+
+                <span>Notes</span>
+
+                <strong>
+                    {{ license.notes or 'No notes' }}
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- Devices -->
+
+<div class="section-header">
+
+    <div>
+
+        <h3>Activated Devices</h3>
+
+        <p>
+            Devices currently associated with this license.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="table-card">
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Device</th>
+                    <th>Activated</th>
+                    <th>Last Seen</th>
+                    <th>Status</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for device in devices %}
+
+                <tr>
+
+                    <td>
+
+                        <strong>
+                            {{ device.device_id_masked or '••••••••' }}
+                        </strong>
+
+                    </td>
+
+                    <td>
+                        {{ device.activated_at }}
+                    </td>
+
+                    <td>
+                        {{ device.last_seen or '—' }}
+                    </td>
+
+                    <td>
+
+                        {% if device.active %}
+
+                            <span class="status-badge active">
+                                ACTIVE
+                            </span>
+
+                        {% else %}
+
+                            <span class="status-badge revoked">
+                                INACTIVE
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="4"
+                        class="empty-state">
+
+                        No devices activated.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- License actions -->
+
+<div class="danger-zone">
+
+    <div>
+
+        <h3>License Actions</h3>
+
+        <p>
+            These actions can affect customer access.
+        </p>
+
+    </div>
+
+
+    {% if license.status == 'ACTIVE' %}
+
+    <form method="POST"
+          action="{{ url_for('admin.license_action', license_id=license.id) }}">
+
+        <input type="hidden"
+               name="csrf_token"
+               value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="revoke">
+
+        <button type="submit"
+                class="btn btn-danger">
+
+            Revoke License
+
+        </button>
+
+    </form>
+
+    {% elif license.status == 'REVOKED' %}
+
+    <form method="POST"
+          action="{{ url_for('admin.license_action', license_id=license.id) }}">
+
+        <input type="hidden"
+               name="csrf_token"
+               value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="reactivate">
+
+        <button type="submit"
+                class="btn btn-primary">
+
+            Reactivate License
+
+        </button>
+
+    </form>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

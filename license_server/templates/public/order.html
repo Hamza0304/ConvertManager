@@ -1,0 +1,49 @@
+{% extends "public/base.html" %}
+
+{% block title %}Place Order{% endblock %}
+
+{% block content %}
+<div class="order-layout">
+    <div class="order-summary">
+        <div class="summary-header">Selected Plan</div>
+        <h2>{{ plan_name }}</h2>
+        <div class="summary-price">${{ '%.2f' % price }}</div>
+        <div class="summary-meta">{{ duration }} · up to {{ max_devices }} devices</div>
+        <div class="manual-payment-note">
+            Payment will be verified manually by the administrator. Follow the instructions below after submitting the order.
+        </div>
+        {% if payment_instructions %}
+        <div class="manual-payment-note">
+            {{ payment_instructions }}
+        </div>
+        {% endif %}
+    </div>
+
+    <form class="stacked-form" method="post" action="{{ url_for('public.order_submit') }}">
+        <input type="hidden" name="plan" value="{{ plan }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-row">
+            <label>Customer Name</label>
+            <input type="text" name="customer_name" required value="{{ request.form.get('customer_name', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label>Customer Email</label>
+            <input type="email" name="customer_email" required value="{{ request.form.get('customer_email', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label>Phone</label>
+            <input type="text" name="phone" value="{{ request.form.get('phone', '') }}">
+        </div>
+
+        <div class="form-row">
+            <label>Notes</label>
+            <textarea name="notes" rows="4">{{ request.form.get('notes', '') }}</textarea>
+        </div>
+
+        <button type="submit" class="primary-button wide">Submit Order</button>
+    </form>
+</div>
+{% endblock %}

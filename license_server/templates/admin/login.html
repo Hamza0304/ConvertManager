@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Admin Login</title>
+    <style>
+        body{margin:0;background:#0f1117;color:#f8fafc;font:14px system-ui,sans-serif;display:grid;place-items:center;min-height:100vh}
+        .box{width:min(400px,calc(100% - 40px));background:#1b1f2a;border:1px solid #2a3040;border-radius:12px;padding:28px}
+        input,button{width:100%;padding:12px;margin:7px 0 14px;border-radius:7px;border:1px solid #2a3040;background:#151821;color:white;box-sizing:border-box}
+        button{background:#6c63ff;border:0;cursor:pointer}
+        .flash{color:#fca5a5;margin:0 0 14px}
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>Admin Login</h1>
+    <p>Manage ConvertManager licenses securely.</p>
+    {% for message in get_flashed_messages() %}
+    <p class="flash">{{ message }}</p>
+    {% endfor %}
+    <form method="post" action="{{ url_for('admin.login_post', next=next_url) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <label>Email</label>
+        <input type="email" name="email" required autocomplete="username">
+        <label>Password</label>
+        <input type="password" name="password" required autocomplete="current-password">
+        <button type="submit">Sign in</button>
+    </form>
+</div>
+</body>
+</html>

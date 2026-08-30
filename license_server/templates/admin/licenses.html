@@ -1,0 +1,185 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+Licenses - ConvertManager
+{% endblock %}
+
+{% block page_title %}
+Licenses
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <p class="page-description">
+            Create, monitor and manage customer licenses.
+        </p>
+
+    </div>
+
+    <a href="{{ url_for('admin.create_license_page') }}"
+       class="btn btn-primary">
+
+        + Create License
+
+    </a>
+
+</div>
+
+
+<div class="table-card">
+
+    <div class="table-toolbar">
+
+        <div>
+
+            <h3>All Licenses</h3>
+
+            <span>
+                {{ licenses|length }} licenses
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>License</th>
+                    <th>Customer</th>
+                    <th>Plan</th>
+                    <th>Status</th>
+                    <th>Devices</th>
+                    <th>Expiration</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for license in licenses %}
+
+                <tr>
+
+                    <td>
+
+                        <strong class="license-key">
+                            {{ license.key_masked if license.key_masked else '••••••••' }}
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+                            {{ license.customer_name or 'Unknown' }}
+                        </strong>
+
+                        {% if license.customer_email %}
+
+                        <small class="table-subtext">
+                            {{ license.customer_email }}
+                        </small>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="plan-badge">
+                            {{ license.plan }}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="status-badge {{ license.status|lower }}">
+                            {{ license.status }}
+                        </span>
+
+                    </td>
+
+
+                    <td>
+                        {{ license.active_devices if license.active_devices is defined else 0 }}
+                        /
+                        {{ license.max_devices }}
+                    </td>
+
+
+                    <td>
+
+                        {% if license.expires_at %}
+                            {{ license.expires_at }}
+                        {% else %}
+                            Never
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <a href="{{ url_for('admin.license_detail', license_id=license.id) }}"
+                           class="btn btn-small">
+
+                            View
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="7"
+                        class="empty-state">
+
+                        <div class="empty-icon">
+                            ▣
+                        </div>
+
+                        <strong>
+                            No licenses found
+                        </strong>
+
+                        <p>
+                            Create your first license to get started.
+                        </p>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

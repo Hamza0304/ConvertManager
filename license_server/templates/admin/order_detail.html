@@ -1,0 +1,124 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Order Detail{% endblock %}
+{% block page_title %}Order #{{ order.id }}{% endblock %}
+{% block page_subtitle %}Review and manage customer request{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+    <div class="card" style="background: linear-gradient(145deg, #111722, #0f1520); border: 1px solid #202938; border-radius: 14px; color: #f8fafc; box-shadow: none;">
+        <h3 style="color: #f8fafc;">Customer Information</h3>
+        <dl class="order-details-list" style="color: #f8fafc;">
+            <div><dt>Customer</dt><dd>{{ order.customer_name }}</dd></div>
+            <div><dt>Email</dt><dd>{{ order.customer_email }}</dd></div>
+            <div><dt>Phone</dt><dd>{{ order.phone or '-' }}</dd></div>
+            <div><dt>Plan</dt><dd>{{ order.plan }}</dd></div>
+            <div><dt>Max Devices</dt><dd>{{ order.max_devices or 1 }}</dd></div>
+            <div><dt>Price</dt><dd>${{ '%.2f' % order.price }}</dd></div>
+        </dl>
+    </div>
+
+    <div class="card" style="background: linear-gradient(145deg, #111722, #0f1520); border: 1px solid #202938; border-radius: 14px; color: #f8fafc; box-shadow: none;">
+        <h3 style="color: #f8fafc;">Order Status</h3>
+        <dl class="order-details-list" style="color: #f8fafc;">
+            <div><dt>Order Status</dt><dd><span class="status-badge ACTIVE">{{ order.status }}</span></dd></div>
+            <div><dt>Payment Status</dt><dd><span class="status-badge {% if order.payment_status == 'PAID' %}ACTIVE{% else %}TRIAL{% endif %}">{{ order.payment_status or 'UNPAID' }}</span></dd></div>
+            <div><dt>Payment Method</dt><dd>{{ order.payment_method or '-' }}</dd></div>
+            <div><dt>Payment Reference</dt><dd><code>{{ order.payment_reference or '-' }}</code></dd></div>
+            <div><dt>Paid At</dt><dd>{{ order.paid_at.strftime('%Y-%m-%d %H:%M') if order.paid_at else '-' }}</dd></div>
+            <div><dt>Created</dt><dd>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '' }}</dd></div>
+            <div><dt>Approved</dt><dd>{{ order.approved_at.strftime('%Y-%m-%d %H:%M') if order.approved_at else '-' }}</dd></div>
+        </dl>
+    </div>
+
+    {% if order.license_id %}
+    <div class="card license-info" style="background: linear-gradient(145deg, #111722, #0f1520); border: 1px solid #202938; border-radius: 14px; color: #f8fafc; box-shadow: none;">
+        <h3 style="color: #f8fafc;">License Information</h3>
+        <dl class="order-details-list" style="color: #f8fafc;">
+            <div><dt>License ID</dt><dd>#{{ order.license_id }}</dd></div>
+            <div><dt>License Status</dt><dd><span class="badge ACTIVE">{{ order.license.status if order.license else 'Unknown' }}</span></dd></div>
+            <div><dt>Masked Key</dt><dd><code>{{ order.license.key_masked if order.license else 'N/A' }}</code></dd></div>
+        </dl>
+        <div class="license-key-retrieval">
+            <p><strong>⚠️ Full License Key Delivery</strong></p>
+            <p>The full license key is required to activate the license. It is available only immediately after creation.</p>
+            <button type="button" class="secondary-button" onclick="retrieveLicenseKey({{ order.id }})">Retrieve Full Key</button>
+            <form method="post" action="{{ url_for('admin.send_order_license_email', order_id=order.id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="secondary-button">Send License by Email</button>
+            </form>
+            <div id="key-display" style="margin-top: 1rem; display: none;">
+                <div class="key-box">
+                    <p><strong>Full License Key:</strong></p>
+                    <p id="full-key-value" style="font-family: monospace; font-size: 1.1em; word-break: break-all; color: var(--primary);"></p>
+                    <button type="button" class="small-button" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <h3>Notes</h3>
+        <p>{{ order.notes or 'No notes provided.' }}</p>
+        <h3>Payment Notes</h3>
+        <p>{{ order.payment_notes or 'No payment notes provided.' }}</p>
+    </div>
+</div>
+
+{% if order.status in ['PENDING', 'PAID'] %}
+<div class="action-row">
+    {% if order.payment_status != 'PAID' %}
+    <form method="post" action="{{ url_for('admin.mark_order_paid', order_id=order.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="payment_method" value="Manual Review">
+        <input type="hidden" name="payment_reference" value="Manual verification">
+        <button type="submit" class="primary-button">Mark as Paid</button>
+    </form>
+    {% endif %}
+    {% if order.payment_status == 'PAID' and order.license_id is none %}
+    <form method="post" action="{{ url_for('admin.approve_order', order_id=order.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="primary-button">Create License & Approve</button>
+    </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('admin.reject_order', order_id=order.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="danger-button">Reject</button>
+    </form>
+</div>
+{% endif %}
+
+<script>
+function retrieveLicenseKey(orderId) {
+    fetch(`/admin/orders/${orderId}/license-key`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('full-key-value').textContent = data.license_key;
+                document.getElementById('key-display').style.display = 'block';
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to retrieve license key');
+        });
+}
+
+function copyToClipboard() {
+    const keyValue = document.getElementById('full-key-value').textContent;
+    if (!keyValue) {
+        alert('No key to copy');
+        return;
+    }
+    navigator.clipboard.writeText(keyValue).then(() => {
+        alert('License key copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+    });
+}
+
+</script>
+{% endblock %}

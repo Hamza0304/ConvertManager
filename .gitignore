@@ -1,0 +1,24 @@
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+history.json
+settings.json
+license_server/.env
+license_server/*.db
+license_server/__pycache__/
+license_server/**/__pycache__/
+
+# Local SQLite databases
+*.db
+**/*.db
+
+# Local runtime data
+instance/
+license_server/instance/
+
+# Build/output folders
+output/
+temp/

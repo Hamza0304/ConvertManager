@@ -1,0 +1,191 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+Devices - ConvertManager
+{% endblock %}
+
+{% block page_title %}
+Devices
+{% endblock %}
+
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+
+        <p class="page-description">
+            Monitor all devices connected to customer licenses.
+        </p>
+
+    </div>
+
+</div>
+
+
+<div class="table-card">
+
+    <div class="table-toolbar">
+
+        <div>
+
+            <h3>Connected Devices</h3>
+
+            <span>
+                {{ devices|length }} devices
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="table-wrapper">
+
+        <table>
+
+            <thead>
+
+                <tr>
+                    <th>Device ID</th>
+                    <th>License</th>
+                    <th>Customer</th>
+                    <th>Activated</th>
+                    <th>Last Seen</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for device in devices %}
+
+                <tr>
+
+                    <td>
+
+                        <strong class="license-key">
+                            {{ device.device_id_masked or '••••••••' }}
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        {{ device.license.key_masked
+                           if device.license
+                           else '—' }}
+
+                    </td>
+
+
+                    <td>
+
+                        {{ device.license.customer_name
+                           if device.license
+                           else '—' }}
+
+                    </td>
+
+
+                    <td>
+                        {{ device.activated_at }}
+                    </td>
+
+
+                    <td>
+                        {{ device.last_seen or '—' }}
+                    </td>
+
+
+                    <td>
+
+                        {% if device.status == 'ACTIVE' %}
+
+                            <span class="status-badge active">
+                                ACTIVE
+                            </span>
+
+                        {% else %}
+
+                            <span class="status-badge revoked">
+                                INACTIVE
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        {% if device.active %}
+
+                        <form method="POST"
+                              action="{{ url_for('admin.device_deactivate', device_id=device.id) }}">
+
+                            <input type="hidden"
+                                   name="csrf_token"
+                                   value="{{ csrf_token() }}">
+
+                            <button type="submit"
+                                    class="btn btn-small btn-danger">
+
+                                Deactivate
+
+                            </button>
+
+                        </form>
+
+                        {% else %}
+
+                            <span class="muted">
+                                —
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="7"
+                        class="empty-state">
+
+                        <div class="empty-icon">
+                            ◉
+                        </div>
+
+                        <strong>
+                            No devices found
+                        </strong>
+
+                        <p>
+                            No customers have activated a device yet.
+                        </p>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endblock %}

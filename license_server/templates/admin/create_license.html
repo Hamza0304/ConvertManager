@@ -1,0 +1,181 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+Create License - ConvertManager
+{% endblock %}
+
+{% block page_title %}
+Create License
+{% endblock %}
+
+
+{% block content %}
+
+<div class="form-page">
+
+    <div class="form-card">
+
+        <div class="form-card-header">
+
+            <div>
+
+                <h3>Create New License</h3>
+
+                <p>
+                    Generate a license for a customer.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form method="POST"
+              action="{{ url_for('admin.create_license_page') }}">
+
+            <input type="hidden"
+                   name="csrf_token"
+                   value="{{ csrf_token() }}">
+
+
+            <!-- Customer -->
+
+            <div class="form-section">
+
+                <h4>Customer Information</h4>
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label for="customer_name">
+                            Customer Name
+                        </label>
+
+                        <input
+                            type="text"
+                            id="customer_name"
+                            name="customer_name"
+                            placeholder="Company or customer name">
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="customer_email">
+                            Customer Email
+                        </label>
+
+                        <input
+                            type="email"
+                            id="customer_email"
+                            name="customer_email"
+                            placeholder="customer@example.com">
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- License -->
+
+            <div class="form-section">
+
+                <h4>License Configuration</h4>
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+
+                        <label for="plan">
+                            Plan
+                        </label>
+
+                        <select id="plan"
+                                name="plan"
+                                required>
+
+                            <option value="MONTHLY">
+                                Monthly
+                            </option>
+
+                            <option value="YEARLY">
+                                Yearly
+                            </option>
+
+                            <option value="LIFETIME">
+                                Lifetime
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="max_devices">
+                            Maximum Devices
+                        </label>
+
+                        <input
+                            type="number"
+                            id="max_devices"
+                            name="max_devices"
+                            value="1"
+                            min="1"
+                            max="100"
+                            required>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="notes">
+                        Notes
+                    </label>
+
+                    <textarea
+                        id="notes"
+                        name="notes"
+                        rows="4"
+                        placeholder="Optional notes about this license..."></textarea>
+
+                </div>
+
+            </div>
+
+
+            <!-- Actions -->
+
+            <div class="form-actions">
+
+                <a href="{{ url_for('admin.licenses') }}"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    Create License
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

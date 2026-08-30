@@ -1,0 +1,1 @@
+Migrations are managed with Flask-Migrate. Run flask --app license_server.app db init, db migrate, and db upgrade from the repository root.

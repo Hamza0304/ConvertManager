@@ -1,6 +1,16 @@
+
+
 customtkinter
 Pillow
 tkinterdnd2
 PyMuPDF
 reportlab
 python-docx
+
+Flask
+Flask-SQLAlchemy
+PyMySQL
+python-dotenv
+gunicorn
+click
+Werkzeug

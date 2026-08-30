@@ -62,3 +62,6 @@ The default development endpoint is `http://127.0.0.1:5000/api/license`; set
 startup validation, refresh, and device deactivation run in background threads.
 The last successful license remains available during the configurable offline
 grace period, and network failures are reported without blocking conversion.
+
+
+Deployment configuration updated.

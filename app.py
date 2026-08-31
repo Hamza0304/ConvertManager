@@ -1,0 +1,1 @@
+from license_server.app import app

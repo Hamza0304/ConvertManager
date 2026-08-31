@@ -102,6 +102,8 @@ def create_app(config_object=None):
 
 app = create_app()
 
+# Deployment verification: 2026-08-31
+
 
 if __name__ == "__main__":
     app.run(

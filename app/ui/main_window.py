@@ -573,7 +573,7 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
             self.refresh_license_settings()
 
         def open_plans_page():
-            url = os.environ.get("CONVERTMANAGER_PLANS_URL", "http://127.0.0.1:5000/plans")
+            url = os.environ.get("CONVERTMANAGER_PLANS_URL", "https://convertmanager-ymaa1.faable.link/plans")
             try:
                 webbrowser.open(url, new=2)
                 message.configure(text="Opening the ConvertManager pricing page in your browser.", text_color=self.success_color)

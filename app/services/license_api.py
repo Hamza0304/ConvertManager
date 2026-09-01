@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 
 LICENSE_API_URL = os.environ.get(
     "CONVERTMANAGER_LICENSE_API_URL",
-    "http://127.0.0.1:5000/api/license",
+    "https://convertmanager-ymaa1.faable.link/api/license",
 )
 DEFAULT_TIMEOUT_SECONDS = 10
 logger = logging.getLogger("convertmanager.license")

@@ -1,0 +1,3 @@
+{
+  "startCommand": "gunicorn --bind 0.0.0.0:$PORT license_server.app:app"
+}

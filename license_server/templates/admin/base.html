@@ -25,7 +25,7 @@
     <aside class="sidebar">
 
         <div class="brand">
-            <div class="brand-icon">C</div>
+            <img class="brand-icon" src="{{ url_for('static', filename='images/ConvertManager.png') }}" alt="ConvertManager">
 
             <div class="brand-text">
                 <strong>ConvertManager</strong>
@@ -33,44 +33,59 @@
             </div>
         </div>
 
+            <nav class="sidebar-nav">
+
         <nav class="sidebar-nav">
 
-            <div class="nav-section">
-                <span class="nav-label">MAIN</span>
+        <div class="nav-section">
 
-                <a href="{{ url_for('admin.dashboard') }}"
-                   class="nav-link">
-                    <span class="nav-icon">⌂</span>
-                    <span>Dashboard</span>
-                </a>
+            <span class="nav-label">MAIN</span>
 
-                <a href="{{ url_for('admin.licenses') }}"
-                   class="nav-link">
-                    <span class="nav-icon">▣</span>
-                    <span>Licenses</span>
-                </a>
 
-                <a href="{{ url_for('admin.orders') }}"
-                   class="nav-link">
-                    <span class="nav-icon">◫</span>
-                    <span>Orders</span>
-                </a>
+            <a href="{{ url_for('admin.dashboard') }}"
+            class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <span class="nav-icon">⌂</span>
+                <span>Dashboard</span>
+            </a>
 
-                <a href="{{ url_for('admin.devices') }}"
-                   class="nav-link">
-                    <span class="nav-icon">▤</span>
-                    <span>Devices</span>
-                </a>
-            </div>
 
-            <div class="nav-section">
-                <span class="nav-label">SYSTEM</span>
+            <a href="{{ url_for('admin.licenses') }}"
+            class="nav-link {% if request.endpoint == 'admin.licenses' %}active{% endif %}">
+                <span class="nav-icon">▣</span>
+                <span>Licenses</span>
+            </a>
 
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">⚙</span>
-                    <span>Settings</span>
-                </a>
-            </div>
+
+            <a href="{{ url_for('admin.orders') }}"
+            class="nav-link {% if request.endpoint == 'admin.orders' %}active{% endif %}">
+                <span class="nav-icon">◫</span>
+                <span>Orders</span>
+            </a>
+
+
+            <a href="{{ url_for('admin.devices') }}"
+            class="nav-link {% if request.endpoint == 'admin.devices' %}active{% endif %}">
+                <span class="nav-icon">▤</span>
+                <span>Devices</span>
+            </a>
+
+        </div>
+
+
+        <div class="nav-section">
+
+            <span class="nav-label">SYSTEM</span>
+
+
+            <a href="#"
+            class="nav-link">
+                <span class="nav-icon">⚙</span>
+                <span>Settings</span>
+            </a>
+
+        </div>
+
+    </nav>
 
         </nav>
 

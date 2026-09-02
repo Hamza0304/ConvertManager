@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html lang="en">
 
 <head>
@@ -15,7 +14,6 @@
         {% block title %}ConvertManager{% endblock %}
     </title>
 
-
     <link
         rel="stylesheet"
         href="{{ url_for('static', filename='css/base.css') }}"
@@ -29,86 +27,93 @@
 <div class="public-shell">
 
 
-<header class="public-topbar">
+    <!-- =========================
+         TOP NAVIGATION
+    ========================== -->
 
+    <header class="public-topbar">
 
-    <a
-        href="{{ url_for('public.home') }}"
-        class="brand-wrap brand-home"
-    >
+        <a
+            href="{{ url_for('public.home') }}"
+            class="brand-wrap brand-home"
+        >
 
-        <div class="brand-icon">
-            C
-        </div>
+            <div class="brand-icon">
 
-
-        <div>
-
-            <strong>
-                ConvertManager
-            </strong>
-
-            <span>
-                File Conversion Software
-            </span>
-
-        </div>
-
-    </a>
-
-
-    <nav class="public-nav">
-
-        <a href="{{ url_for('public.home') }}">
-            Home
-        </a>
-
-
-        <a href="{{ url_for('public.plans') }}">
-            Plans
-        </a>
-
-
-        
-
-    </nav>
-
-
-</header>
-
-
-<main class="public-content">
-
-
-    {% with messages = get_flashed_messages() %}
-
-        {% for message in messages %}
-
-            <div class="flash">
-
-                {{ message }}
+                <img
+                    src="{{ url_for('static', filename='images/ConvertManager.png') }}"
+                    alt="ConvertManager"
+                >
 
             </div>
 
-        {% endfor %}
 
-    {% endwith %}
+            <div class="brand-text">
+
+                <strong>
+                    ConvertManager
+                </strong>
+
+                <span>
+                    File Conversion Software
+                </span>
+
+            </div>
+
+        </a>
 
 
-    {% block content %}
-    {% endblock %}
+        <nav class="public-nav">
+
+            <a href="{{ url_for('public.home') }}">
+                Home
+            </a>
+
+            <a href="{{ url_for('public.plans') }}">
+                Plans
+            </a>
+
+        </nav>
+
+    </header>
 
 
-</main>
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="public-content">
+
+        {% with messages = get_flashed_messages() %}
+
+            {% for message in messages %}
+
+                <div class="flash">
+                    {{ message }}
+                </div>
+
+            {% endfor %}
+
+        {% endwith %}
 
 
-<footer class="public-footer">
+        {% block content %}
+        {% endblock %}
 
-    <p>
-        © 2026 ConvertManager · Version 1.0.0
-    </p>
+    </main>
 
-</footer>
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer class="public-footer">
+
+        <p>
+            © 2026 ConvertManager · Version 1.0.0
+        </p>
+
+    </footer>
 
 
 </div>

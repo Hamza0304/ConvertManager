@@ -7,6 +7,7 @@ import os
 import threading
 import time
 import webbrowser
+from PIL import Image
 
 from app.services.conversion_service import convert_files
 from app.services.history_service import (
@@ -32,8 +33,12 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
 
         # Window
         self.title("ConvertManager")
-        self.geometry("1280x820")
-        self.minsize(1024, 680)
+        icon_path = Path(__file__).resolve().parents[2] / "assets" / "branding" / "ConvertManager.ico"
+
+        if icon_path.exists():
+            self.iconbitmap(str(icon_path))
+            self.geometry("1280x820")
+            self.minsize(1024, 680)
 
         # Application data
         self.files = []
@@ -175,6 +180,10 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
 
         self.sidebar.grid_propagate(False)
 
+        
+        
+        
+        
         # -------------------------
         # Logo
         # -------------------------
@@ -189,19 +198,24 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
             padx=22,
             pady=(30, 35)
         )
+        # Logo image
+        logo_path = Path(__file__).resolve().parents[2] / "assets" / "branding" / "ConvertManager.png"
+
+        logo_image = ctk.CTkImage(
+            light_image=Image.open(logo_path),
+            dark_image=Image.open(logo_path),
+            size=(45, 45)
+        )
 
         logo = ctk.CTkLabel(
             logo_frame,
-            text="CM",
+            text="",
+            image=logo_image,
             width=45,
             height=45,
-            corner_radius=12,
-            fg_color=self.accent_color,
-            text_color="white",
-            font=ctk.CTkFont(
-                size=20,
-                weight="bold"
-            )
+            
+            fg_color="transparent",
+        
         )
 
         logo.pack(
@@ -216,6 +230,17 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
                 size=18,
                 weight="bold"
             )
+        )
+
+        # Brand name
+        brand = ctk.CTkLabel(
+            logo_frame,
+            text="ConvertManager",
+            text_color=self.text_color,
+            font=ctk.CTkFont(
+                size=18,
+                weight="bold"
+                )
         )
 
         brand.pack(
@@ -416,11 +441,13 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
     def scroll_to_top(self):
         self.main._parent_canvas.yview_moveto(0)
 
+  
     def open_settings_window(self):
         if getattr(self, "settings_window", None) is not None:
             if self.settings_window.winfo_exists():
                 self.settings_window.focus_force()
-                return
+                self.settings_window.lift()
+            return
 
         self.settings_window = ctk.CTkToplevel(self)
         self.settings_window.title("ConvertManager Settings")
@@ -428,7 +455,44 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
         self.settings_window.minsize(520, 600)
         self.settings_window.transient(self)
 
-        self.create_settings_section(self.settings_window)
+        # ConvertManager icon
+        icon_path = (
+        Path(__file__).resolve().parents[2]
+            / "assets"
+            / "branding"
+            / "ConvertManager.ico"
+        )
+
+        if icon_path.exists():
+            self.settings_window.iconbitmap(str(icon_path))
+
+        # Scrollable settings area
+        settings_scroll = ctk.CTkScrollableFrame(
+            self.settings_window,
+            fg_color="transparent",
+            corner_radius=0
+        )
+
+        settings_scroll.pack(
+            fill="both",
+            expand=True,
+            padx=0,
+            pady=0
+        )
+
+        # Put all settings inside the scrollable area
+        self.create_settings_section(settings_scroll)
+
+        # When the window closes, reset the variable
+        def on_settings_close():
+            self.settings_window.destroy()
+            self.settings_window = None
+        self.settings_window.protocol("WM_DELETE_WINDOW", on_settings_close)
+
+        # Keep the window in front
+        self.settings_window.lift()
+        self.settings_window.focus_force()
+
 
     def check_license_on_startup(self):
         status = self.license_service.get_status()
@@ -506,23 +570,136 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
             self.license_detail_label.configure(text=f"{self.license_detail_label.cget('text')} • Offline")
 
     def open_license_window(self):
+
+        # If License window is already open, bring it to the front
+        if getattr(self, "license_window", None) is not None:
+            try:
+                if self.license_window.winfo_exists():
+                    self.license_window.deiconify()
+                    self.license_window.lift()
+                    self.license_window.focus_force()
+                    return
+            except Exception:
+                self.license_window = None
+
+        # Create License window
         window = ctk.CTkToplevel(self)
+
+        self.license_window = window
+
         window.title("License / Activation")
         window.geometry("560x590")
         window.resizable(False, False)
+
+        # Keep it connected to the main application
         window.transient(self)
+
+        # Bring window to front
+        window.lift()
+        window.focus_force()
+
+        # Center the window on the screen
+        window.update_idletasks()
+
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+
+        window_width = 560
+        window_height = 590
+
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+
+        window.geometry(
+            f"{window_width}x{window_height}+{x}+{y}"
+        )
+
+        # Window icon
+        icon_path = (
+            Path(__file__).resolve().parents[2]
+            / "assets"
+            / "branding"
+            / "ConvertManager.ico"
+        )
+
+        if icon_path.exists():
+            window.iconbitmap(str(icon_path))
+
+        # Close handler
+        def on_close():
+            self.license_window = None
+            window.destroy()
+
+        window.protocol(
+            "WM_DELETE_WINDOW",
+            on_close
+        )
+
+        # ==========================================
+        # ConvertManager Logo
+        # ==========================================
+
+        logo_path = (
+            Path(__file__).resolve().parents[2]
+            / "assets"
+            / "branding"
+            / "ConvertManager.png"
+        )
+
+        if logo_path.exists():
+
+            self.license_logo_image = ctk.CTkImage(
+                light_image=Image.open(logo_path),
+                dark_image=Image.open(logo_path),
+                size=(48, 48)
+            )
+
+            logo_label = ctk.CTkLabel(
+                window,
+                text="",
+                image=self.license_logo_image,
+                fg_color="transparent"
+            )
+
+            logo_label.pack(
+                pady=(22, 5)
+            )
+
+        # ==========================================
+        # Title
+        # ==========================================
 
         ctk.CTkLabel(
             window,
             text="License / Activation",
             text_color=self.text_color,
-            font=ctk.CTkFont(size=25, weight="bold")
-        ).pack(anchor="w", padx=30, pady=(30, 8))
+            font=ctk.CTkFont(
+                size=25,
+                weight="bold"
+            )
+        ).pack(
+            anchor="center",
+            padx=30,
+            pady=(5, 8)
+        )
+
+        # ==========================================
+        # Subtitle
+        # ==========================================
+
         ctk.CTkLabel(
             window,
             text="Activate, verify, or deactivate this computer's license.",
             text_color=self.secondary_text
-        ).pack(anchor="w", padx=30, pady=(0, 22))
+        ).pack(
+            anchor="center",
+            padx=30,
+            pady=(0, 22)
+        )
+
+        # ==========================================
+        # License Status
+        # ==========================================
 
         status = ctk.CTkLabel(
             window,
@@ -535,7 +712,16 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
             padx=16,
             pady=12,
         )
-        status.pack(fill="x", padx=30, pady=(0, 16))
+
+        status.pack(
+            fill="x",
+            padx=30,
+            pady=(0, 16)
+        )
+
+        # ==========================================
+        # License Key Entry
+        # ==========================================
 
         entry = ctk.CTkEntry(
             window,
@@ -543,9 +729,29 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
             height=44,
             placeholder_text="XXXX-XXXX-XXXX-XXXX"
         )
-        entry.pack(padx=30, pady=5)
-        message = ctk.CTkLabel(window, text="", text_color=self.secondary_text, wraplength=480, justify="left")
-        message.pack(anchor="w", padx=30, pady=(8, 0))
+
+        entry.pack(
+            padx=30,
+            pady=5
+        )
+
+        # ==========================================
+        # Message
+        # ==========================================
+
+        message = ctk.CTkLabel(
+            window,
+            text="",
+            text_color=self.secondary_text,
+            wraplength=480,
+            justify="left"
+        )
+
+        message.pack(
+            anchor="w",
+            padx=30,
+            pady=(8, 0)
+        )
 
         def update_window_status():
             data = self.license_service.get_license()

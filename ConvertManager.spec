@@ -1,11 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
+
+project_dir = Path(SPECPATH)
 
 a = Analysis(
     ['main.py'],
-    pathex=[],
+    pathex=[str(project_dir)],
     binaries=[],
-    datas=[],
+    datas=[
+        (
+            str(project_dir / 'assets' / 'branding'),
+            'assets/branding'
+        ),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -14,6 +22,7 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -32,7 +41,9 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=str(project_dir / 'assets' / 'branding' / 'ConvertManager.ico'),
 )
+
 coll = COLLECT(
     exe,
     a.binaries,

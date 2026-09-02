@@ -13,7 +13,7 @@ PLAN_PRICES = {
 }
 
 PLAN_DETAILS = {
-    "MONTHLY": {"name": "Monthly", "duration": "1 month", "max_devices": 1, "price": 19.99, "features": ["1 device", "Email support", "Monthly updates"]},
+    "MONTHLY": {"name": "Monthly", "duration": "1 month", "max_devices": 2, "price": 19.99, "features": ["2 devices", "Support field", "Email support", "Monthly updates" ,]},
     "YEARLY": {"name": "Yearly", "duration": "12 months", "max_devices": 3, "price": 99.99, "features": ["3 devices", "Priority support", "Annual updates"]},
     "LIFETIME": {"name": "Lifetime", "duration": "Unlimited", "max_devices": 5, "price": 249.99, "features": ["5 devices", "Lifetime access", "Premium support"]},
 }

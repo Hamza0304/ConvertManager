@@ -259,3 +259,10 @@ def _iso(value):
     return value.replace(tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+@public_bp.get("/download/ConvertManager-Setup.exe")
+def download_convertmanager():
+    return send_from_directory(
+        current_app.config["DOWNLOAD_DIR"],
+        "ConvertManager-Setup.exe",
+        as_attachment=True
+    )

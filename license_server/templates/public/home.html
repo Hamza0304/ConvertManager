@@ -1,0 +1,262 @@
+{% extends "public/base.html" %}
+
+{% block title %}ConvertManager - File Conversion Made Easy{% endblock %}
+
+{% block content %}
+
+<section class="home-hero">
+
+    <div class="hero-content">
+
+        <div class="hero-badge">
+            VERSION {{ version }}
+        </div>
+
+        <h1>
+            Convert Your Files<br>
+            <span>Quickly and Easily.</span>
+        </h1>
+
+        <p class="hero-description">
+            ConvertManager is a simple and powerful desktop application
+            designed to convert your files quickly and efficiently.
+            Select your files, choose the format you need, and let
+            ConvertManager do the rest.
+        </p>
+
+        <div class="hero-actions">
+
+            <a
+                href="{{ download_url }}"
+                class="hero-download-button"
+            >
+                ⬇ Download ConvertManager
+            </a>
+
+            <a
+                href="{{ url_for('public.plans') }}"
+                class="hero-plans-button"
+            >
+                View Plans →
+            </a>
+
+        </div>
+
+        <div class="hero-info">
+
+            <div>
+                <strong>⚡ Fast</strong>
+                <span>Quick file conversion</span>
+            </div>
+
+            <div>
+                <strong>🔒 Secure</strong>
+                <span>Your files stay private</span>
+            </div>
+
+            <div>
+                <strong>💻 Desktop App</strong>
+                <span>Built for Windows</span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="hero-card">
+
+        <div class="app-preview">
+
+            <div class="preview-header">
+
+                <div class="preview-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+
+                <span>ConvertManager</span>
+
+            </div>
+
+
+            <div class="preview-body">
+
+                <div class="preview-icon">
+                    ↻
+                </div>
+
+                <h3>Convert Your Files</h3>
+
+                <p>
+                    Select files and choose the output format.
+                </p>
+
+
+                <div class="preview-file">
+
+                    <span>📄</span>
+
+                    <div>
+
+                        <strong>example.tiff</strong>
+
+                        <small>Ready to convert</small>
+
+                    </div>
+
+                </div>
+
+
+                <div class="preview-progress">
+
+                    <div class="progress-bar">
+
+                        <div></div>
+
+                    </div>
+
+                    <span>Ready</span>
+
+                </div>
+
+
+                <button>
+                    CONVERT FILE
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="features-section">
+
+    <div class="section-header">
+
+        <span class="eyebrow">
+            WHY CONVERTMANAGER
+        </span>
+
+        <h2>
+            Simple. Fast. Reliable.
+        </h2>
+
+        <p>
+            Everything you need for easy file conversion.
+        </p>
+
+    </div>
+
+
+    <div class="feature-grid">
+
+        <div class="feature-card">
+
+            <div class="feature-icon">
+                ⚡
+            </div>
+
+            <h3>Fast Conversion</h3>
+
+            <p>
+                Convert your files quickly without complicated steps.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <div class="feature-icon">
+                📁
+            </div>
+
+            <h3>Multiple Formats</h3>
+
+            <p>
+                Easily work with different supported image formats.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <div class="feature-icon">
+                🖱
+            </div>
+
+            <h3>Easy to Use</h3>
+
+            <p>
+                Select files, choose a format and start converting.
+            </p>
+
+        </div>
+
+
+        <div class="feature-card">
+
+            <div class="feature-icon">
+                🔐
+            </div>
+
+            <h3>Licensed Software</h3>
+
+            <p>
+                Choose the plan that best fits your needs.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="home-cta">
+
+    <div>
+
+        <span class="eyebrow">
+            READY TO START?
+        </span>
+
+        <h2>
+            Get ConvertManager Today
+        </h2>
+
+        <p>
+            Download the application and choose the plan that works for you.
+        </p>
+
+    </div>
+
+
+    <div class="cta-actions">
+
+        <a
+            href="{{ download_url }}"
+            class="hero-download-button"
+        >
+            ⬇ Download
+        </a>
+
+        <a
+            href="{{ url_for('public.plans') }}"
+            class="hero-plans-button"
+        >
+            View Plans
+        </a>
+
+    </div>
+
+</section>
+
+{% endblock %}

@@ -21,4 +21,8 @@ license_server/instance/
 
 # Build/output folders
 output/
+temp/build/
+dist/
+installer/
+build/
 temp/

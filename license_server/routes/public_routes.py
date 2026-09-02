@@ -128,3 +128,23 @@ def order_confirmation(order_id):
         payment=_payment_settings(),
         plan_name=PLAN_DETAILS.get(order.plan, {}).get("name", order.plan),
     )
+
+
+from flask import Blueprint, render_template, current_app
+
+public_bp = Blueprint("public", __name__)
+
+
+@public_bp.get("/")
+def home():
+
+    return render_template(
+        "public/home.html",
+
+        version="1.0.0",
+
+        download_url=current_app.config.get(
+            "CONVERTMANAGER_DOWNLOAD_URL",
+            "#"
+        )
+    )

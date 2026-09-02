@@ -138,3 +138,8 @@ class Config:
     SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "ConvertManager")
     SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
     SMTP_USE_SSL = os.environ.get("SMTP_USE_SSL", "false").lower() == "true"
+    
+CONVERTMANAGER_DOWNLOAD_URL = os.environ.get(
+    "CONVERTMANAGER_DOWNLOAD_URL",
+    "#"
+)

@@ -101,6 +101,7 @@ def sqlalchemy_engine_options(uri):
     }
 
 
+
 class Config:
     # Loaded from license_server/.env (or the process environment). Do not generate
     # a random key at import time — that would invalidate sessions on every restart.
@@ -112,11 +113,17 @@ class Config:
     RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("RATE_LIMIT_WINDOW_SECONDS", "60"))
     RATE_LIMIT_MAX_REQUESTS = int(os.environ.get("RATE_LIMIT_MAX_REQUESTS", "30"))
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+
     # false for local HTTP; set SESSION_COOKIE_SECURE=true behind HTTPS in production.
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE", "Lax") or "Lax"
     MAX_CONTENT_LENGTH = 16 * 1024
+
+    CONVERTMANAGER_DOWNLOAD_URL = os.environ.get(
+        "CONVERTMANAGER_DOWNLOAD_URL",
+        "#"
+    )
 
     # Manual bank payment details. Never put real RIB values in source control.
     PAYMENT_ACCOUNT_HOLDER = os.environ.get("PAYMENT_ACCOUNT_HOLDER", "")
@@ -126,20 +133,24 @@ class Config:
         "PAYMENT_INSTRUCTIONS",
         "Please use your Order Number as the transfer reference.",
     )
-    CONVERTMANAGER_PLANS_URL = os.environ.get("CONVERTMANAGER_PLANS_URL", "http://127.0.0.1:5000/plans")
+
+    CONVERTMANAGER_PLANS_URL = os.environ.get(
+        "CONVERTMANAGER_PLANS_URL",
+        "http://127.0.0.1:5000/plans"
+    )
+
     SMTP_HOST = os.environ.get("SMTP_HOST", "")
     try:
         SMTP_PORT = int(os.environ.get("SMTP_PORT", "587") or "587")
     except (TypeError, ValueError):
         SMTP_PORT = 587
+
     SMTP_USERNAME = os.environ.get("SMTP_USERNAME", "")
     SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
     SMTP_FROM_EMAIL = os.environ.get("SMTP_FROM_EMAIL", "")
     SMTP_FROM_NAME = os.environ.get("SMTP_FROM_NAME", "ConvertManager")
     SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "true").lower() == "true"
     SMTP_USE_SSL = os.environ.get("SMTP_USE_SSL", "false").lower() == "true"
-    
-CONVERTMANAGER_DOWNLOAD_URL = os.environ.get(
-    "CONVERTMANAGER_DOWNLOAD_URL",
-    "#"
-)
+
+
+

@@ -163,7 +163,7 @@ def audit(action, license_id=None, device_id=None, metadata=None):
 def inject_csrf():
     return {"csrf_token": csrf_token}
 
-
+@admin_bp.get("/login/")
 @admin_bp.get("/login")
 def login():
     next_url = _safe_admin_next(request.args.get("next"))

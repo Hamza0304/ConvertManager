@@ -53,7 +53,7 @@ def _order_form_context(plan, extra=None):
         context.update(extra)
     return context
 
-
+@public_bp.get("/plans/")
 @public_bp.get("/plans")
 def plans():
     return render_template("public/plans.html", plans=PLAN_DETAILS)
@@ -130,21 +130,18 @@ def order_confirmation(order_id):
     )
 
 
-from flask import Blueprint, render_template, current_app
-
-public_bp = Blueprint("public", __name__)
-
 
 @public_bp.get("/")
 def home():
-
     return render_template(
         "public/home.html",
-
         version="1.0.0",
-
         download_url=current_app.config.get(
             "CONVERTMANAGER_DOWNLOAD_URL",
             "#"
+        ),
+        plans_url=current_app.config.get(
+            "CONVERTMANAGER_PLANS_URL",
+            "/plans"
         )
     )

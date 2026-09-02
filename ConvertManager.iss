@@ -1,6 +1,6 @@
 
 #define MyAppName "ConvertManager"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Hamza Senhaji"
 #define MyAppURL "https://www.convertmanager.com"
 #define MyAppExeName "ConvertManager.exe"
@@ -38,13 +38,11 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Files]
 Source: "dist\ConvertManager\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "assets\branding\ConvertManager.ico"; DestDir: "{app}\assets\branding"; Flags: ignoreversion
 
 [Icons]
-; Start Menu
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; IconIndex: 0
-
-; Desktop
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; IconIndex: 0
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\assets\branding\ConvertManager.ico"; IconIndex: 0
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\assets\branding\ConvertManager.ico"; IconIndex: 0
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent

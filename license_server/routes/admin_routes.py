@@ -1,14 +1,15 @@
 import json
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import case, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from license_server.models import AdminUser, AuditLog, License, LicenseDevice, LicenseOrder, db, utc_now
+from license_server.models import AdminUser, AuditLog, FreeAccessGrant, FreeAccessSetting, License, LicenseDevice, LicenseOrder, Plan, db, utc_now
 from license_server.services.email_service import (
     is_email_configured,
     send_license_email,
@@ -16,12 +17,8 @@ from license_server.services.email_service import (
     smtp_runtime_diagnostics,
 )
 from license_server.services.license_service import create_license, verify_issued_license, find_license
-
-PLAN_MAX_DEVICES = {
-    "MONTHLY": 1,
-    "YEARLY": 3,
-    "LIFETIME": 5,
-}
+from license_server.services.free_access_service import extend_existing_grants, get_settings
+from license_server.services.plan_service import normalize_code, plan_payload, validate_plan_values
 
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -114,7 +111,7 @@ def _fulfill_paid_order(order):
     if order.license_id is not None:
         return None, db.session.get(License, order.license_id)
 
-    max_devices = order.max_devices or PLAN_MAX_DEVICES.get(order.plan, 1)
+    max_devices = order.max_devices or 1
     key, created_license = create_license(
         plan=order.plan,
         max_devices=max_devices,
@@ -226,6 +223,127 @@ def dashboard_page():
     return redirect(url_for("admin.dashboard"))
 
 
+@admin_bp.get("/plans")
+@login_required
+def plans():
+    return render_template("admin/plans.html", plans=Plan.query.order_by(Plan.created_at.asc()).all())
+
+
+@admin_bp.route("/plans/create", methods=["GET", "POST"])
+@login_required
+def create_plan():
+    if request.method == "POST":
+        if not check_csrf():
+            flash("Invalid security token.")
+            return redirect(url_for("admin.create_plan"))
+        try:
+            values = validate_plan_values(request.form)
+            plan = Plan(**{key: value for key, value in values.items() if key != "features"})
+            plan.features = json.dumps(values["features"])
+            db.session.add(plan)
+            db.session.commit()
+            flash("Plan created.")
+            return redirect(url_for("admin.plans"))
+        except (ValueError, IntegrityError) as error:
+            db.session.rollback()
+            flash("Plan code must be unique." if isinstance(error, IntegrityError) else str(error))
+    return render_template("admin/plan_form.html", plan=None)
+
+
+@admin_bp.route("/plans/<int:plan_id>/edit", methods=["GET", "POST"])
+@login_required
+def edit_plan(plan_id):
+    plan = db.session.get(Plan, plan_id)
+    if not plan:
+        return "Plan not found", 404
+    if request.method == "POST":
+        if not check_csrf():
+            flash("Invalid security token.")
+            return redirect(url_for("admin.edit_plan", plan_id=plan_id))
+        try:
+            values = validate_plan_values(request.form, existing=plan)
+            for key, value in values.items():
+                setattr(plan, key, json.dumps(value) if key == "features" else value)
+            db.session.commit()
+            flash("Plan updated.")
+            return redirect(url_for("admin.plans"))
+        except (ValueError, IntegrityError) as error:
+            db.session.rollback()
+            flash("Plan code must be unique." if isinstance(error, IntegrityError) else str(error))
+    return render_template("admin/plan_form.html", plan=plan)
+
+
+@admin_bp.post("/plans/<int:plan_id>/toggle")
+@login_required
+def toggle_plan(plan_id):
+    if not check_csrf():
+        flash("Invalid security token.")
+        return redirect(url_for("admin.plans"))
+    plan = db.session.get(Plan, plan_id)
+    if not plan:
+        return "Plan not found", 404
+    plan.active = not plan.active
+    db.session.commit()
+    flash(f"Plan {'activated' if plan.active else 'deactivated'}.")
+    return redirect(url_for("admin.plans"))
+
+
+@admin_bp.route("/free-access", methods=["GET", "POST"])
+@login_required
+def free_access():
+    settings = get_settings()
+    if request.method == "POST":
+        if not check_csrf():
+            flash("Invalid security token.")
+            return redirect(url_for("admin.free_access"))
+        try:
+            duration = int(request.form.get("duration_days", ""))
+            if duration < 1:
+                raise ValueError
+        except ValueError:
+            flash("Free-access duration must be at least 1 day.")
+            return render_template("admin/free_access.html", settings=settings)
+        previous = settings.duration_days
+        settings.enabled = request.form.get("enabled") == "on"
+        settings.duration_days = duration
+        settings.revision += 1
+        extend_existing_grants(previous, duration)
+        db.session.commit()
+        flash("Free-access settings saved.")
+    return render_template("admin/free_access.html", settings=settings)
+
+
+@admin_bp.route("/testing/reset", methods=["GET", "POST"])
+@login_required
+def reset_testing_data():
+    counts = {
+        "orders": LicenseOrder.query.count(),
+        "licenses": License.query.count(),
+        "devices": LicenseDevice.query.count(),
+    }
+    if request.method == "POST":
+        if not check_csrf():
+            flash("Invalid security token.")
+            return redirect(url_for("admin.reset_testing_data"))
+        if (request.form.get("confirmation") or "").strip() != "RESET":
+            flash("Type RESET to confirm deleting testing data.")
+            return render_template("admin/system_reset.html", counts=counts)
+        try:
+            db.session.query(AuditLog).filter(AuditLog.license_id.is_not(None)).delete(synchronize_session=False)
+            db.session.query(FreeAccessGrant).delete(synchronize_session=False)
+            db.session.query(LicenseDevice).delete(synchronize_session=False)
+            db.session.query(LicenseOrder).delete(synchronize_session=False)
+            db.session.query(License).delete(synchronize_session=False)
+            db.session.commit()
+            flash("Testing license data was reset.")
+            counts = {"orders": 0, "licenses": 0, "devices": 0}
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("Testing data reset failed")
+            flash("Testing data reset failed. No changes were committed.")
+    return render_template("admin/system_reset.html", counts=counts)
+
+
 @admin_bp.get("/orders")
 @login_required
 def orders():
@@ -327,14 +445,15 @@ def approve_order(order_id):
     try:
         key, created_license = create_license(
             plan=order.plan,
-            max_devices=order.max_devices or PLAN_MAX_DEVICES.get(order.plan, 1),
+            max_devices=order.max_devices or 1,
+            expires_at=(order.created_at + timedelta(days=order.duration_days)) if order.duration_days else None,
             customer_name=order.customer_name,
             customer_email=order.customer_email,
             notes=order.notes,
         )
         # CRITICAL: Verify the generated key is valid and can be found
         try:
-            verify_issued_license(key, created_license, plan=order.plan, max_devices=order.max_devices or PLAN_MAX_DEVICES.get(order.plan, 1))
+            verify_issued_license(key, created_license, plan=order.plan, max_devices=order.max_devices or 1)
         except Exception as error:
             current_app.logger.error(
                 "Order %s license verification failed last4=%s error=%s",
@@ -491,7 +610,7 @@ def create_license_page():
             return render_template("admin/license_created.html", license_key=key, license=record)
         except (TypeError, ValueError) as error:
             flash(str(error))
-    return render_template("admin/create_license.html")
+    return render_template("admin/create_license.html", plans=Plan.query.filter_by(active=True).order_by(Plan.name.asc()).all())
 
 
 @admin_bp.get("/licenses/<int:license_id>")

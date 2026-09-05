@@ -10,24 +10,24 @@
 </div>
 
 <div class="pricing-grid">
-    {% for slug, details in plans.items() %}
-    <div class="pricing-card {% if slug == 'YEARLY' %}featured{% endif %}">
-        <div class="plan-badge">{{ details.name }}</div>
-        <h2>{{ details.name }}</h2>
+    {% for plan in plans %}
+    <div class="pricing-card {% if plan.code == 'YEARLY' %}featured{% endif %}">
+        <div class="plan-badge">{{ plan.name }}</div>
+        <h2>{{ plan.name }}</h2>
         <div class="price-row">
-            <span class="price">${{ '%.2f' % details.price }}</span>
-            <span class="period">/{{ details.duration }}</span>
+            <span class="price">${{ '%.2f' % plan.price }}</span>
+            <span class="period">/{% if plan.duration_days %}{{ plan.duration_days }} days{% else %}lifetime{% endif %}</span>
         </div>
         <div class="plan-meta">
-            <div><strong>{{ details.max_devices }}</strong> device(s)</div>
-            <div>{{ details.duration }}</div>
+            <div><strong>{{ plan.max_devices }}</strong> device(s)</div>
+            <div>{% if plan.duration_days %}{{ plan.duration_days }} days{% else %}Lifetime{% endif %}</div>
         </div>
         <ul class="feature-list">
-            {% for feature in details.features %}
+            {% for feature in plan.feature_list() %}
             <li>{{ feature }}</li>
             {% endfor %}
         </ul>
-        <a class="primary-button" href="{{ url_for('public.order_form', plan=slug) }}">Choose Plan</a>
+        <a class="primary-button" href="{{ url_for('public.order_form', plan=plan.code) }}">Choose Plan</a>
     </div>
     {% endfor %}
 </div>

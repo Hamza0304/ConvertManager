@@ -10,6 +10,8 @@ from license_server.models import AdminUser, db, ensure_compatible_schema
 from license_server.routes.license_routes import license_bp
 from license_server.routes.admin_routes import admin_bp
 from license_server.routes.public_routes import public_bp
+from license_server.services.plan_service import ensure_default_plans
+from license_server.services.free_access_service import get_settings
 
 
 def create_app(config_object=None):
@@ -19,6 +21,12 @@ def create_app(config_object=None):
     # Admin Dashboard process always sees the same host used by email_service.
     app.config.from_object(config_object or Config)
     apply_smtp_config(app)
+    if str(app.config.get("SQLALCHEMY_DATABASE_URI", "")).startswith("sqlite"):
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            key: value
+            for key, value in (app.config.get("SQLALCHEMY_ENGINE_OPTIONS") or {}).items()
+            if key in {"connect_args", "echo"}
+        }
 
     # Database
     db.init_app(app)
@@ -75,6 +83,8 @@ def create_app(config_object=None):
     with app.app_context():
         db.create_all()
         ensure_compatible_schema()
+        ensure_default_plans()
+        get_settings()
         from license_server.services.email_service import smtp_runtime_diagnostics
 
         smtp_status = smtp_runtime_diagnostics()

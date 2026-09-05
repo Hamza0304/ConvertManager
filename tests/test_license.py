@@ -121,6 +121,146 @@ class LicenseServiceTests(unittest.TestCase):
             self.assertEqual(service.get_status(), "TRIAL")
             self.assertNotEqual(service.get_connection_status(), "OFFLINE")
 
+    def test_server_free_access_updates_status_when_local_trial_is_expired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            now = datetime(2026, 9, 5, tzinfo=timezone.utc)
+            service = LicenseService(Path(directory) / "license.json", lambda: now)
+            service.data.update({
+                "status": "EXPIRED",
+                "trial_started_at": (now - timedelta(days=10)).isoformat(),
+                "trial_expires_at": (now - timedelta(days=1)).isoformat(),
+                "free_access_enabled": True,
+            })
+            response = {
+                "success": True,
+                "free_access": {
+                    "device_id": service.get_device_id(),
+                    "enabled": True,
+                    "duration_days": 30,
+                    "revision": 2,
+                    "trial_started_at": (now - timedelta(days=1)).isoformat(),
+                    "trial_expires_at": (now + timedelta(days=30)).isoformat(),
+                },
+            }
+            self.assertTrue(service.save_server_free_access(response))
+            self.assertEqual(service.get_status(), "TRIAL")
+            self.assertEqual(service.data["status"], "TRIAL")
+
+    def test_server_free_access_updates_status_when_local_status_is_device_not_authorized(self):
+        with tempfile.TemporaryDirectory() as directory:
+            now = datetime(2026, 9, 5, tzinfo=timezone.utc)
+            service = LicenseService(Path(directory) / "license.json", lambda: now)
+            service.data["status"] = "DEVICE_NOT_AUTHORIZED"
+            service.data.pop("license_key", None)
+            response = {
+                "success": True,
+                "free_access": {
+                    "device_id": service.get_device_id(),
+                    "enabled": True,
+                    "duration_days": 30,
+                    "revision": 3,
+                    "trial_started_at": (now - timedelta(days=2)).isoformat(),
+                    "trial_expires_at": (now + timedelta(days=20)).isoformat(),
+                },
+            }
+            self.assertTrue(service.save_server_free_access(response))
+            self.assertEqual(service.get_status(), "TRIAL")
+            self.assertEqual(service.data["status"], "TRIAL")
+
+    def test_server_free_access_disabled_sets_expired_status(self):
+        with tempfile.TemporaryDirectory() as directory:
+            now = datetime(2026, 9, 5, tzinfo=timezone.utc)
+            service = LicenseService(Path(directory) / "license.json", lambda: now)
+            response = {
+                "success": True,
+                "free_access": {
+                    "device_id": service.get_device_id(),
+                    "enabled": False,
+                    "duration_days": 0,
+                    "revision": 4,
+                    "trial_started_at": (now - timedelta(days=2)).isoformat(),
+                    "trial_expires_at": (now - timedelta(days=1)).isoformat(),
+                },
+            }
+            self.assertTrue(service.save_server_free_access(response))
+            self.assertEqual(service.get_status(), "EXPIRED")
+            self.assertEqual(service.data["status"], "EXPIRED")
+
+    def test_server_free_access_rejects_wrong_device(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service = LicenseService(Path(directory) / "license.json")
+            original_started = service.data.get("trial_started_at")
+            original_expires = service.data.get("trial_expires_at")
+            response = {
+                "success": True,
+                "free_access": {
+                    "device_id": "different-device",
+                    "enabled": True,
+                    "duration_days": 30,
+                    "revision": 5,
+                    "trial_started_at": "2026-09-01T00:00:00+00:00",
+                    "trial_expires_at": "2026-09-30T00:00:00+00:00",
+                },
+            }
+            self.assertFalse(service.save_server_free_access(response))
+            self.assertEqual(service.data.get("trial_started_at"), original_started)
+            self.assertEqual(service.data.get("trial_expires_at"), original_expires)
+            self.assertEqual(service.data.get("free_access_enabled"), None)
+
+    def test_paid_license_bypasses_free_access_startup_sync(self):
+        from app.ui.main_window import MainWindow
+
+        window = object.__new__(MainWindow)
+        calls = []
+        window.license_service = type("LicenseStore", (), {
+            "get_license": lambda self: {"license_key": "ABCD-2345-EFGH-6789"},
+        })()
+        window.start_online_validation = lambda: calls.append("online")
+        window.start_free_access_sync = lambda: calls.append("free")
+        window.open_license_window = lambda: calls.append("open")
+
+        window.check_license_on_startup()
+        self.assertEqual(calls, ["online"])
+
+    def test_no_paid_license_always_attempts_free_access_sync_on_startup(self):
+        from app.ui.main_window import MainWindow
+
+        window = object.__new__(MainWindow)
+        calls = []
+        window.license_service = type("LicenseStore", (), {
+            "get_license": lambda self: {"status": "EXPIRED"},
+        })()
+        window.start_online_validation = lambda: calls.append("online")
+        window.start_free_access_sync = lambda: calls.append("free")
+
+        window.check_license_on_startup()
+        self.assertEqual(calls, ["free"])
+
+    def test_free_access_server_outage_keeps_existing_local_cache(self):
+        from app.ui.main_window import MainWindow
+        from app.services.license_api import LicenseAPIError
+
+        with tempfile.TemporaryDirectory() as directory:
+            now = datetime(2026, 9, 5, tzinfo=timezone.utc)
+            service = LicenseService(Path(directory) / "license.json", lambda: now)
+            service.data.update({
+                "status": "EXPIRED",
+                "trial_started_at": (now - timedelta(days=10)).isoformat(),
+                "trial_expires_at": (now - timedelta(days=1)).isoformat(),
+                "free_access_enabled": True,
+            })
+
+            window = object.__new__(MainWindow)
+            window.license_service = service
+            window.license_api = type("Api", (), {
+                "get_free_access": lambda self, *args, **kwargs: (_ for _ in ()).throw(LicenseAPIError("NETWORK_ERROR", "No server"))
+            })()
+            window.open_license_window = lambda: (_ for _ in ()).throw(AssertionError("should not open while offline"))
+
+            window.start_free_access_sync()
+            self.assertEqual(service.get_status(), "EXPIRED")
+            self.assertEqual(service.data["trial_expires_at"], (now - timedelta(days=1)).isoformat())
+
 
 if __name__ == "__main__":
     unittest.main()

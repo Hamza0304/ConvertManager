@@ -94,22 +94,10 @@ Create License
                             Plan
                         </label>
 
-                        <select id="plan"
-                                name="plan"
-                                required>
-
-                            <option value="MONTHLY">
-                                Monthly
-                            </option>
-
-                            <option value="YEARLY">
-                                Yearly
-                            </option>
-
-                            <option value="LIFETIME">
-                                Lifetime
-                            </option>
-
+                        <select id="plan" name="plan" required>
+                            {% for plan in plans %}
+                            <option value="{{ plan.code }}">{{ plan.name }} ({{ plan.max_devices }} devices)</option>
+                            {% endfor %}
                         </select>
 
                     </div>

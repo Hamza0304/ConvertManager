@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 
 
-TRIAL_DURATION_DAYS = 7
+LEGACY_TRIAL_DURATION_DAYS = 7
 ENFORCE_APPLICATION_GATE = True
 OFFLINE_GRACE_DAYS = 7
 LICENSE_KEY_PATTERN = re.compile(r"^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}(?:-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}){3}$")
@@ -66,7 +66,7 @@ class LicenseService:
             return
 
         started = self._now()
-        expires = started + timedelta(days=TRIAL_DURATION_DAYS)
+        expires = started + timedelta(days=LEGACY_TRIAL_DURATION_DAYS)
         self.data["trial_started_at"] = started.isoformat()
         self.data["trial_expires_at"] = expires.isoformat()
 
@@ -133,6 +133,33 @@ class LicenseService:
             "last_validation_status": "ONLINE",
         })
         self._server_validated_this_session = True
+        self._save_data()
+        return True
+
+    def save_server_free_access(self, response):
+        if not isinstance(response, dict):
+            return False
+
+        access = response.get("free_access")
+        if not isinstance(access, dict):
+            return False
+        if access.get("device_id") != self.get_device_id():
+            return False
+
+        started = self._parse_timestamp(access.get("trial_started_at"))
+        expires = self._parse_timestamp(access.get("trial_expires_at"))
+        if started is None or expires is None or expires < started:
+            return False
+
+        enabled = bool(access.get("enabled"))
+        self.data.update({
+            "trial_started_at": started.isoformat(),
+            "trial_expires_at": expires.isoformat(),
+            "free_access_enabled": enabled,
+            "free_access_revision": access.get("revision"),
+            "last_validation_status": "ONLINE",
+            "status": "TRIAL" if enabled and expires > self._now() else "EXPIRED",
+        })
         self._save_data()
         return True
 
@@ -208,6 +235,8 @@ class LicenseService:
         expiration = self._parse_timestamp(self.data.get("trial_expires_at"))
         if expiration is None:
             return "INVALID"
+        if self.data.get("free_access_enabled") is False:
+            return "EXPIRED"
         return "TRIAL" if self._now() < expiration else "EXPIRED"
 
     def validate_license(self):

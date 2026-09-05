@@ -56,6 +56,15 @@ class LicenseAPI:
             "device_id": device_id,
         })
 
+    def get_free_access(self, device_id, trial_started_at=None):
+        payload = {"device_id": device_id}
+        if trial_started_at:
+            payload["trial_started_at"] = trial_started_at
+        return self._post("/free-access", payload)
+
+    def get_plans(self):
+        return self._get("/plans")
+
     def _post(self, endpoint, payload):
         url = f"{self.base_url}{endpoint}"
         logger.info("License API request: POST %s (key=%s, device=%s)", url, _mask(payload.get("license_key")), _mask(payload.get("device_id")))
@@ -96,6 +105,25 @@ class LicenseAPI:
             raise self._error_from_response(response_data)
 
         logger.info("License API successful response: POST %s response=%s", url, _safe_log_data(response_data))
+        return response_data
+
+    def _get(self, endpoint):
+        url = f"{self.base_url}{endpoint}"
+        request = Request(url, headers={"Accept": "application/json"}, method="GET")
+        try:
+            with self._opener(request, timeout=self.timeout) as response:
+                raw = response.read()
+        except HTTPError as error:
+            response_data = self._decode_response(error)
+            raise self._error_from_response(response_data, error.code) from error
+        except (URLError, TimeoutError, OSError) as error:
+            raise LicenseAPIError("NETWORK_ERROR", "Unable to connect to the license server.") from error
+        try:
+            response_data = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise LicenseAPIError("SERVER_ERROR", "The license server returned an invalid response.") from error
+        if not isinstance(response_data, dict) or not response_data.get("success"):
+            raise self._error_from_response(response_data)
         return response_data
 
     @staticmethod

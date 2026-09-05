@@ -1,0 +1,14 @@
+{% extends "admin/base.html" %}
+{% block title %}Free Access - ConvertManager{% endblock %}
+{% block page_title %}Free Access{% endblock %}
+{% block content %}
+<div class="form-page"><div class="form-card">
+<p class="page-description">Control free access centrally. Existing registered users are extended once when the duration increases.</p>
+<form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<div class="form-group"><label><input type="checkbox" name="enabled" {% if settings.enabled %}checked{% endif %}> Enabled</label></div>
+<div class="form-group"><label for="duration_days">Base Duration (days)</label><input id="duration_days" name="duration_days" type="number" min="1" required value="{{ settings.duration_days }}"></div>
+<div class="form-actions"><button class="btn btn-primary" type="submit">Save Changes</button></div>
+</form>
+</div></div>
+{% endblock %}

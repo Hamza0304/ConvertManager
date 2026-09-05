@@ -495,11 +495,35 @@ class MainWindow(ctk.CTk, TkinterDnD.DnDWrapper):
 
 
     def check_license_on_startup(self):
-        status = self.license_service.get_status()
-        if status not in {"ACTIVE", "TRIAL"}:
-            self.open_license_window()
-        elif status == "ACTIVE":
+        data = self.license_service.get_license()
+        if data.get("license_key"):
             self.start_online_validation()
+            return
+
+        self.start_free_access_sync()
+
+    def start_free_access_sync(self):
+        data = self.license_service.get_license()
+
+        def worker():
+            try:
+                response = self.license_api.get_free_access(
+                    self.license_service.get_device_id(),
+                    data.get("trial_started_at"),
+                )
+                if not self.license_service.save_server_free_access(response):
+                    return
+                self.after(0, self.finish_free_access_sync)
+            except LicenseAPIError:
+                # Keep the legacy local trial available during a server outage.
+                return
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def finish_free_access_sync(self):
+        self.update_license_sidebar()
+        if self.license_service.get_status() != "TRIAL":
+            self.open_license_window()
 
     def start_online_validation(self):
         license_data = self.license_service.get_license()

@@ -6,7 +6,8 @@ from functools import wraps
 
 from flask import Blueprint, current_app, jsonify, request
 
-from license_server.models import License, LicenseDevice, db, utc_now
+from license_server.models import License, LicenseDevice, Plan, db, utc_now
+from license_server.services.free_access_service import access_payload, register_or_refresh
 from license_server.services.license_service import (
     activate,
     create_license,
@@ -103,6 +104,39 @@ def deactivate_route():
         return _error(*error)
     logger.info("License device deactivated")
     return jsonify({"success": True, **data})
+
+
+@license_bp.post("/free-access")
+def free_access_route():
+    if rate_limited():
+        return _error("RATE_LIMITED", "Too many requests. Please try again later.", 429)
+    payload = _payload()
+    device_id = str(payload.get("device_id", "")).strip() if payload else ""
+    if not device_id or len(device_id) > 128:
+        return _error("INVALID_REQUEST", "device_id is required.", 400)
+    settings, grant = register_or_refresh(device_id, payload.get("trial_started_at"))
+    return jsonify({"success": True, "free_access": access_payload(settings, grant)})
+
+
+@license_bp.get("/plans")
+def plans_route():
+    records = Plan.query.filter_by(active=True).order_by(Plan.price.asc(), Plan.name.asc()).all()
+    return jsonify({
+        "success": True,
+        "plans": [
+            {
+                "code": plan.code,
+                "name": plan.name,
+                "type": plan.type,
+                "price": plan.price,
+                "duration_days": plan.duration_days,
+                "max_devices": plan.max_devices,
+                "features": plan.feature_list(),
+                "active": plan.active,
+            }
+            for plan in records
+        ],
+    })
 
 
 @license_bp.route("/info", methods=["GET", "POST"])

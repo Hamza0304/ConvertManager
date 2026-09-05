@@ -62,6 +62,24 @@
                 <span>Orders</span>
             </a>
 
+            <a href="{{ url_for('admin.plans') }}"
+            class="nav-link {% if request.endpoint == 'admin.plans' or request.endpoint == 'admin.create_plan' or request.endpoint == 'admin.edit_plan' %}active{% endif %}">
+                <span class="nav-icon">◆</span>
+                <span>Plans</span>
+            </a>
+
+            <a href="{{ url_for('admin.free_access') }}"
+            class="nav-link {% if request.endpoint == 'admin.free_access' %}active{% endif %}">
+                <span class="nav-icon">◇</span>
+                <span>Free Access</span>
+            </a>
+
+            <a href="{{ url_for('admin.reset_testing_data') }}"
+            class="nav-link {% if request.endpoint == 'admin.reset_testing_data' %}active{% endif %}">
+                <span class="nav-icon">!</span>
+                <span>Testing / Reset</span>
+            </a>
+
 
             <a href="{{ url_for('admin.devices') }}"
             class="nav-link {% if request.endpoint == 'admin.devices' %}active{% endif %}">

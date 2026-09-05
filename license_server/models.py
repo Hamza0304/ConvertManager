@@ -63,6 +63,8 @@ class License(db.Model):
     license_key_hash = db.Column(db.String(64), unique=True, nullable=False, index=True)
     license_key_last4 = db.Column(db.String(4), nullable=False)
     plan = db.Column(db.String(20), nullable=False)
+    plan_id = db.Column(db.Integer, db.ForeignKey("plans.id"), nullable=True, index=True)
+    duration_days = db.Column(db.Integer, nullable=True)
     status = db.Column(db.String(20), nullable=False, default="NOT_ACTIVATED")
     max_devices = db.Column(db.Integer, nullable=False, default=1)
     created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
@@ -89,6 +91,54 @@ class License(db.Model):
         return f"****-****-****-{self.license_key_last4}"
 
 
+class Plan(db.Model):
+    __tablename__ = "plans"
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(40), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(120), nullable=False)
+    type = db.Column(db.String(40), nullable=False, default="PERSONAL")
+    price = db.Column(db.Float, nullable=False, default=0.0)
+    duration_days = db.Column(db.Integer, nullable=True)
+    max_devices = db.Column(db.Integer, nullable=False, default=1)
+    features = db.Column(db.Text, nullable=False, default="[]")
+    active = db.Column(db.Boolean, nullable=False, default=True, index=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now)
+
+    def feature_list(self):
+        import json
+
+        try:
+            value = json.loads(self.features or "[]")
+        except (TypeError, ValueError):
+            return []
+        return value if isinstance(value, list) else []
+
+
+class FreeAccessSetting(db.Model):
+    __tablename__ = "free_access_settings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
+    duration_days = db.Column(db.Integer, nullable=False, default=30)
+    revision = db.Column(db.Integer, nullable=False, default=1)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now)
+
+
+class FreeAccessGrant(db.Model):
+    __tablename__ = "free_access_grants"
+
+    id = db.Column(db.Integer, primary_key=True)
+    device_id = db.Column(db.String(128), unique=True, nullable=False, index=True)
+    started_at = db.Column(db.DateTime, nullable=False, default=utc_now)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    applied_duration_days = db.Column(db.Integer, nullable=False, default=0)
+    last_seen_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utc_now)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utc_now, onupdate=utc_now)
+
+
 class LicenseOrder(db.Model):
     __tablename__ = "license_orders"
 
@@ -97,6 +147,8 @@ class LicenseOrder(db.Model):
     customer_email = db.Column(db.String(255), nullable=False, index=True)
     phone = db.Column(db.String(50), nullable=True)
     plan = db.Column(db.String(20), nullable=False, index=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("plans.id"), nullable=True, index=True)
+    duration_days = db.Column(db.Integer, nullable=True)
     price = db.Column(db.Float, nullable=False, default=0.0)
     max_devices = db.Column(db.Integer, nullable=False, default=1)
     status = db.Column(db.String(20), nullable=False, default="PENDING", index=True)

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from license_server.models import FreeAccessGrant, FreeAccessSetting, db, utc_now
 
@@ -36,38 +36,56 @@ def register_or_refresh(device_id, started_at=None):
     settings = get_settings()
     grant = FreeAccessGrant.query.filter_by(device_id=device_id).first()
     now = utc_now()
+
     if grant is None:
         started = _normalize_started_at(started_at)
         grant = FreeAccessGrant(
             device_id=device_id,
             started_at=started,
             applied_duration_days=settings.duration_days,
+            expires_at=started + timedelta(days=settings.duration_days),
         )
         db.session.add(grant)
-    elif grant.applied_duration_days < settings.duration_days:
+
+    else:
+        # Always synchronize the existing grant with the
+        # current Admin-configured Free Days.
+        if grant.applied_duration_days != settings.duration_days:
+            grant.expires_at = grant.started_at + timedelta(
+                days=settings.duration_days
+            )
+            grant.applied_duration_days = settings.duration_days
+
         if grant.expires_at is None:
-            grant.expires_at = grant.started_at
-        from datetime import timedelta
-        grant.expires_at += timedelta(days=settings.duration_days - grant.applied_duration_days)
-        grant.applied_duration_days = settings.duration_days
-    if grant.expires_at is None:
-        from datetime import timedelta
-        grant.expires_at = grant.started_at + timedelta(days=settings.duration_days)
+            grant.expires_at = grant.started_at + timedelta(
+                days=settings.duration_days
+            )
+
     grant.last_seen_at = now
     db.session.commit()
+
     return settings, grant
 
 
 def extend_existing_grants(previous_duration, new_duration):
-    if new_duration <= previous_duration:
-        return 0
     from datetime import timedelta
+
+    if new_duration == previous_duration:
+        return 0
+
     changed = 0
-    for grant in FreeAccessGrant.query.filter(FreeAccessGrant.applied_duration_days < new_duration).all():
-        current_duration = max(previous_duration, grant.applied_duration_days)
-        grant.expires_at = (grant.expires_at or grant.started_at) + timedelta(days=new_duration - current_duration)
+
+    for grant in FreeAccessGrant.query.all():
+        if not grant.started_at:
+            continue
+
+        # The current Admin setting becomes the authoritative
+        # duration for existing free-access grants.
+        grant.expires_at = grant.started_at + timedelta(days=new_duration)
         grant.applied_duration_days = new_duration
+
         changed += 1
+
     return changed
 
 

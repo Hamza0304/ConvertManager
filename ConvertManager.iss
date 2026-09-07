@@ -1,6 +1,6 @@
 
 #define MyAppName "ConvertManager"
-#define MyAppVersion "1.1.2"
+#define MyAppVersion "1.1.3"
 #define MyAppPublisher "Hamza Senhaji"
 #define MyAppURL "https://www.convertmanager.com"
 #define MyAppExeName "ConvertManager.exe"

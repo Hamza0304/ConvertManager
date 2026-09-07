@@ -271,7 +271,7 @@ class LicenseServerTests(unittest.TestCase):
             self.assertEqual(order.max_devices, 1)
             self.assertEqual(order.payment_status, "UNPAID")
             self.assertEqual(order.status, "PENDING")
-            self.assertEqual(order.price, 19.99)
+            self.assertEqual(order.price, 9.99)
 
         invalid_email = self.client.post(
             "/order",

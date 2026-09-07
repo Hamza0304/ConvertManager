@@ -5,30 +5,193 @@
 {% block content %}
 <div class="public-header">
     <p class="eyebrow">Flexible licensing</p>
-    <h1>Choose the right plan for your workflow</h1>
-    <p class="subtitle">Simple pricing for individuals and teams. Purchase securely and get your license after manual payment verification.</p>
+    <h1>Choose Your Plan</h1>
+    <p class="subtitle">Try ConvertManager for free, then choose the plan that fits your needs.</p>
 </div>
 
-<div class="pricing-grid">
-    {% for plan in plans %}
-    <div class="pricing-card {% if plan.code == 'YEARLY' %}featured{% endif %}">
-        <div class="plan-badge">{{ plan.name }}</div>
-        <h2>{{ plan.name }}</h2>
+<div class="pricing-grid pricing-grid-three">
+    <div class="pricing-card pricing-card-free">
+        <div class="plan-badge">Free access</div>
+        <h2>Free Access</h2>
         <div class="price-row">
-            <span class="price">${{ '%.2f' % plan.price }}</span>
-            <span class="period">/{% if plan.duration_days %}{{ plan.duration_days }} days{% else %}lifetime{% endif %}</span>
+            <span class="price">$0</span>
         </div>
         <div class="plan-meta">
-            <div><strong>{{ plan.max_devices }}</strong> device(s)</div>
-            <div>{% if plan.duration_days %}{{ plan.duration_days }} days{% else %}Lifetime{% endif %}</div>
+            <div><strong>{% if free_access and free_access.enabled %}{{ free_access.duration_days }}{% else %}0{% endif %}</strong> days</div>
+            <div><strong>1</strong> device</div>
         </div>
         <ul class="feature-list">
-            {% for feature in plan.feature_list() %}
-            <li>{{ feature }}</li>
-            {% endfor %}
+            <li>Basic access</li>
+            {% if free_access and free_access.enabled %}
+            <li>Free-access window from server config</li>
+            {% else %}
+            <li>Free access currently disabled</li>
+            {% endif %}
         </ul>
-        <a class="primary-button" href="{{ url_for('public.order_form', plan=plan.code) }}">Choose Plan</a>
+        <a class="secondary-button" href="{{ url_for('public.free_access') }}">Try Free</a>
     </div>
-    {% endfor %}
+
+    <div class="pricing-card pricing-card-personal featured">
+        <div class="plan-badge">Personal</div>
+        <h2>Personal</h2>
+
+        <div class="plan-toggle-group" data-plan-group="personal">
+            {% for plan in personal_plans %}
+                <button type="button" class="plan-option {% if loop.first %}is-selected{% endif %}" data-plan-code="{{ plan.code }}">{{ plan.name }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="personal-plan-summary" id="personal-plan-summary">
+            {% set primary_plan = personal_plans[0] if personal_plans else None %}
+            {% if primary_plan %}
+                <h3 id="personal-plan-name">{{ primary_plan.name }}</h3>
+                <div class="price-row">
+                    <span class="price" id="personal-plan-price">${{ '%.2f' % primary_plan.price }}</span>
+                    <span class="period">/{{ primary_plan.duration_days if primary_plan.duration_days else 'lifetime' }}</span>
+                </div>
+                <div class="plan-meta">
+                    <div><strong id="personal-plan-devices">{{ primary_plan.max_devices }}</strong> device(s)</div>
+                    <div id="personal-plan-duration">{{ primary_plan.duration_days if primary_plan.duration_days else 'Lifetime' }} days</div>
+                </div>
+                <ul class="feature-list" id="personal-plan-features">
+                    {% for feature in primary_plan.feature_list() %}
+                    <li>{{ feature }}</li>
+                    {% endfor %}
+                </ul>
+                <a class="primary-button" id="personal-plan-button" href="{{ url_for('public.order_form', plan=primary_plan.code) }}">Choose {{ primary_plan.name }}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="pricing-card pricing-card-company">
+        {% set company_plan = company_plans[0] if company_plans else None %}
+        {% if company_plan %}
+            <div class="plan-badge">Company</div>
+            <h2>Company</h2>
+            <div class="plan-toggle-group" data-plan-group="company">
+                {% for plan in company_plans %}
+                <button type="button" class="plan-option {% if loop.first %}is-selected{% endif %}" data-plan-code="{{ plan.code }}">{{ plan.max_devices }} Devices</button>
+                {% endfor %}
+            </div>
+            <h3 id="company-plan-name">{{ company_plan.name }}</h3>
+            <div class="price-row">
+                <span class="price" id="company-plan-price">${{ '%.2f' % company_plan.price }}</span>
+                <span class="period" id="company-plan-duration">/{{ company_plan.duration_days if company_plan.duration_days else 'Lifetime' }}</span>
+            </div>
+            <div class="plan-meta">
+                <div><strong id="company-plan-devices">{{ company_plan.max_devices }}</strong> devices</div>
+                <div id="company-plan-duration-meta">{{ company_plan.duration_days if company_plan.duration_days else 'Lifetime' }} days</div>
+            </div>
+            <ul class="feature-list" id="company-plan-features">
+                {% for feature in company_plan.feature_list() %}
+                <li>{{ feature }}</li>
+                {% endfor %}
+            </ul>
+            <a class="primary-button" id="company-plan-button" href="{{ url_for('public.order_form', plan=company_plan.code) }}">Choose {{ company_plan.name }}</a>
+        {% else %}
+            <div class="plan-badge">Company</div>
+            <h2>Company</h2>
+            <div class="price-row">
+                <span class="price">Custom</span>
+            </div>
+            <div class="plan-meta">
+                <div><strong>Contact</strong> sales</div>
+                <div>Custom quote</div>
+            </div>
+            <ul class="feature-list">
+                <li>Volume licensing available</li>
+                <li>Priority support</li>
+            </ul>
+            <a class="primary-button" href="{{ url_for('public.home') }}">Contact Sales</a>
+        {% endif %}
+    </div>
 </div>
+
+<script>
+(function () {
+    const planGroups = document.querySelectorAll('[data-plan-group]');
+    const plansByCode = new Map();
+    let selectedPlanCode = null;
+    let selectedPersonalPlanCode = null;
+    let selectedCompanyPlanCode = null;
+    let pendingSelection = null;
+
+    function durationLabel(plan) {
+        return plan.duration_days === null ? 'Lifetime' : `${plan.duration_days} days`;
+    }
+
+    function setSelectedButton(group, code) {
+        group.querySelectorAll('.plan-option').forEach((option) => {
+            const selected = option.dataset.planCode === code;
+            option.classList.toggle('is-selected', selected);
+            option.setAttribute('aria-pressed', String(selected));
+        });
+    }
+
+    function renderPlan(groupName, code) {
+        const plan = plansByCode.get(code);
+        const group = document.querySelector(`[data-plan-group="${groupName}"]`);
+        if (!plan || !group) return;
+
+        selectedPlanCode = plan.code;
+        if (groupName === 'personal') selectedPersonalPlanCode = plan.code;
+        if (groupName === 'company') selectedCompanyPlanCode = plan.code;
+        setSelectedButton(group, plan.code);
+        group.querySelectorAll('.plan-option').forEach((option) => {
+            const optionPlan = plansByCode.get(option.dataset.planCode);
+            if (!optionPlan) return;
+            option.textContent = groupName === 'company'
+                ? `${optionPlan.max_devices} Devices`
+                : optionPlan.name;
+        });
+
+        const prefix = groupName === 'personal' ? 'personal' : 'company';
+        document.getElementById(`${prefix}-plan-name`).textContent = plan.name;
+        document.getElementById(`${prefix}-plan-price`).textContent = `$${Number(plan.price).toFixed(2)}`;
+        document.getElementById(`${prefix}-plan-devices`).textContent = plan.max_devices;
+        document.getElementById(`${prefix}-plan-features`).innerHTML = (plan.features || []).map((feature) => `<li>${feature}</li>`).join('');
+        document.getElementById(`${prefix}-plan-button`).href = `/order?plan=${encodeURIComponent(plan.code)}`;
+        document.getElementById(`${prefix}-plan-button`).textContent = `Choose ${plan.name}`;
+        if (groupName === 'personal') {
+            group.closest('.pricing-card').querySelector('.period').textContent = `/${plan.duration_days === null ? 'lifetime' : plan.duration_days}`;
+            document.getElementById('personal-plan-duration').textContent = durationLabel(plan);
+        } else {
+            document.getElementById('company-plan-duration').textContent = `/${plan.duration_days === null ? 'lifetime' : plan.duration_days}`;
+            document.getElementById('company-plan-duration-meta').textContent = durationLabel(plan);
+        }
+    }
+
+    async function loadPlans() {
+        const response = await fetch('/api/license/plans', { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('Unable to load plans');
+        const payload = await response.json();
+        (payload.plans || []).forEach((plan) => plansByCode.set(plan.code, plan));
+        planGroups.forEach((group) => {
+            const firstOption = group.querySelector('.plan-option');
+            const requestedCode = pendingSelection?.group === group.dataset.planGroup
+                ? pendingSelection.code
+                : firstOption?.dataset.planCode;
+            if (requestedCode) renderPlan(group.dataset.planGroup, requestedCode);
+        });
+        pendingSelection = null;
+    }
+
+    planGroups.forEach((group) => {
+        group.addEventListener('click', (event) => {
+            const option = event.target.closest('.plan-option');
+            if (!option || !group.contains(option)) return;
+            event.preventDefault();
+            if (!plansByCode.has(option.dataset.planCode)) {
+                pendingSelection = { group: group.dataset.planGroup, code: option.dataset.planCode };
+                return;
+            }
+            renderPlan(group.dataset.planGroup, option.dataset.planCode);
+        });
+    });
+
+    loadPlans().catch(() => {
+        planGroups.forEach((group) => group.classList.add('plans-unavailable'));
+    });
+})();
+</script>
 {% endblock %}

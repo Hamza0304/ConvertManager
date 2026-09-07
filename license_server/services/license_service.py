@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from datetime import timedelta, timezone
+from datetime import timezone
 
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -9,7 +9,6 @@ from license_server.models import License, LicenseDevice, Plan, db, utc_now
 from license_server.services.plan_service import expiration_for_plan
 
 
-LEGACY_PLANS = {"MONTHLY", "YEARLY", "LIFETIME"}
 ACTIVE_STATUSES = {"ACTIVE", "TRIAL"}
 KEY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 MAX_DEVICE_ID_LENGTH = 128
@@ -215,7 +214,7 @@ def license_info(key, device_id):
 def create_license(plan="MONTHLY", max_devices=1, expires_at=None, customer_name=None, customer_email=None, notes=None):
     normalized_plan = str(plan or "").strip().upper()
     selected_plan = Plan.query.filter_by(code=normalized_plan).first()
-    if selected_plan is None and normalized_plan not in LEGACY_PLANS:
+    if selected_plan is None:
         raise ValueError("Invalid commercial license plan")
     if isinstance(max_devices, bool):
         raise ValueError("max_devices must be a positive integer")
@@ -225,11 +224,11 @@ def create_license(plan="MONTHLY", max_devices=1, expires_at=None, customer_name
         raise ValueError("max_devices must be a positive integer") from error
     if normalized_max_devices <= 0:
         raise ValueError("max_devices must be a positive integer")
-    duration_days = selected_plan.duration_days if selected_plan else (None if normalized_plan == "LIFETIME" else (30 if normalized_plan == "MONTHLY" else 365))
+    duration_days = selected_plan.duration_days
     if duration_days is None:
         expires_at = None
     elif expires_at is None:
-        expires_at = expiration_for_plan(selected_plan, utc_now()) if selected_plan else utc_now() + timedelta(days=duration_days)
+        expires_at = expiration_for_plan(selected_plan, utc_now())
     for _ in range(MAX_KEY_GENERATION_ATTEMPTS):
         key = generate_key()
         record = License(

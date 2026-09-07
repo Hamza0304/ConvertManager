@@ -1,0 +1,29 @@
+{% extends "public/base.html" %}
+
+{% block title %}Free Access{% endblock %}
+
+{% block content %}
+<div class="public-header">
+    <p class="eyebrow">No payment required</p>
+    <h1>Free Access</h1>
+    <p class="subtitle">Start the server-controlled free-access period for this device.</p>
+</div>
+
+<div class="free-access-panel">
+    {% if access and access.status == 'TRIAL' %}
+    <p class="plan-badge">FREE ACCESS ACTIVE</p>
+    <h2>{{ access.days_remaining }} days remaining</h2>
+    <p>Access is linked to this device and checked by the License Server.</p>
+    <div class="hero-actions">
+        <a class="primary-button" href="{{ download_url }}">Open ConvertManager</a>
+        <a class="secondary-button" href="{{ url_for('public.plans') }}">View Plans</a>
+    </div>
+    {% else %}
+    <p>Free access is {% if access and not access.enabled %}currently unavailable{% else %}ready to start{% endif %}.</p>
+    <form method="post" action="{{ url_for('public.free_access') }}">
+        <button class="primary-button" type="submit">Start Free Access</button>
+        <a class="secondary-button" href="{{ url_for('public.plans') }}">View Plans</a>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

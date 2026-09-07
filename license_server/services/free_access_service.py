@@ -6,8 +6,16 @@ from license_server.models import FreeAccessGrant, FreeAccessSetting, db, utc_no
 def get_settings():
     settings = FreeAccessSetting.query.first()
     if settings is None:
-        settings = FreeAccessSetting(enabled=True, duration_days=30, revision=1)
+        settings = FreeAccessSetting(enabled=True, duration_days=45, revision=1)
         db.session.add(settings)
+        db.session.commit()
+    return settings
+
+
+def ensure_default_settings():
+    settings = get_settings()
+    if settings.revision == 1 and settings.duration_days == 30:
+        settings.duration_days = 45
         db.session.commit()
     return settings
 
@@ -64,6 +72,10 @@ def extend_existing_grants(previous_duration, new_duration):
 
 
 def access_payload(settings, grant):
+    now = utc_now()
+    days_remaining = 0
+    if grant and grant.expires_at and grant.expires_at > now:
+        days_remaining = int(((grant.expires_at - now).total_seconds() + 86399) // 86400)
     return {
         "enabled": settings.enabled,
         "duration_days": settings.duration_days,
@@ -72,4 +84,5 @@ def access_payload(settings, grant):
         "trial_started_at": grant.started_at.isoformat() + "Z",
         "trial_expires_at": grant.expires_at.isoformat() + "Z" if grant.expires_at else None,
         "status": "TRIAL" if settings.enabled and grant.expires_at and grant.expires_at > utc_now() else "EXPIRED",
+        "days_remaining": days_remaining,
     }

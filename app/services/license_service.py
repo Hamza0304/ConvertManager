@@ -106,7 +106,8 @@ class LicenseService:
         key = self.normalize_key(license_data.get("key") or license_data.get("license_key"))
         if not self.is_valid_key_format(key):
             return False
-        if license_data.get("plan") not in {"MONTHLY", "YEARLY", "LIFETIME"}:
+        plan_name = str(license_data.get("plan") or "").strip().upper()
+        if not plan_name or not re.fullmatch(r"[A-Z0-9-]+", plan_name):
             return False
         if license_data.get("device_id", self.get_device_id()) != self.get_device_id():
             return False

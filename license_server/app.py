@@ -11,7 +11,7 @@ from license_server.routes.license_routes import license_bp
 from license_server.routes.admin_routes import admin_bp
 from license_server.routes.public_routes import public_bp
 from license_server.services.plan_service import ensure_default_plans
-from license_server.services.free_access_service import get_settings
+from license_server.services.free_access_service import ensure_default_settings
 
 
 def create_app(config_object=None):
@@ -84,7 +84,7 @@ def create_app(config_object=None):
         db.create_all()
         ensure_compatible_schema()
         ensure_default_plans()
-        get_settings()
+        ensure_default_settings()
         from license_server.services.email_service import smtp_runtime_diagnostics
 
         smtp_status = smtp_runtime_diagnostics()

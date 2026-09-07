@@ -226,7 +226,14 @@ def dashboard_page():
 @admin_bp.get("/plans")
 @login_required
 def plans():
-    return render_template("admin/plans.html", plans=Plan.query.order_by(Plan.created_at.asc()).all())
+    plan_order = case((Plan.type == "PERSONAL", 0), (Plan.type == "COMPANY", 1), else_=2)
+    plans = Plan.query.filter_by(active=True).order_by(
+        plan_order,
+        Plan.max_devices.asc(),
+        Plan.duration_days.asc(),
+        Plan.name.asc(),
+    ).all()
+    return render_template("admin/plans.html", plans=plans)
 
 
 @admin_bp.route("/plans/create", methods=["GET", "POST"])

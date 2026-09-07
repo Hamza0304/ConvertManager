@@ -113,6 +113,12 @@ def test_free_access_extension_is_applied_once(app):
         assert second.expires_at == first_expiration
 
 
+def test_untouched_default_free_access_is_45_days(app):
+    with app.app_context():
+        settings = FreeAccessSetting.query.first()
+        assert settings.duration_days == 45
+
+
 def test_plans_api_reflects_each_database_price_change(app, client):
     with app.app_context():
         plan = Plan.query.filter_by(code="MONTHLY").one()
@@ -123,6 +129,76 @@ def test_plans_api_reflects_each_database_price_change(app, client):
         Plan.query.filter_by(code="MONTHLY").one().price = 8.99
         db.session.commit()
     assert client.get("/api/license/plans").get_json()["plans"][0]["price"] == 8.99
+
+
+def test_default_company_and_personal_plan_codes_exist(app):
+    with app.app_context():
+        assert Plan.query.filter_by(code="MONTHLY").count() == 1
+        assert Plan.query.filter_by(code="6-MONTHS").count() == 1
+        assert Plan.query.filter_by(code="COMPANY-10").count() == 1
+        assert Plan.query.filter_by(code="COMPANY-20").count() == 1
+        assert Plan.query.filter_by(code="COMPANY-30").count() == 1
+
+
+def test_create_license_accepts_company_plan_codes(app):
+    with app.app_context():
+        key, record = create_license("COMPANY-20", 20)
+        assert record.plan == "COMPANY-20"
+        assert record.max_devices == 20
+        assert key
+
+
+def test_public_pricing_contains_only_dynamic_personal_and_company_selectors(app, client):
+    page = client.get("/plans")
+    assert page.status_code == 200
+    for code in ("MONTHLY", "6-MONTHS", "YEARLY", "COMPANY-10", "COMPANY-20", "COMPANY-30"):
+        assert code.encode() in page.data
+    assert b'data-plan-code="COMPANY"' not in page.data
+    assert b"LIFETIME" not in page.data
+
+
+def test_try_free_does_not_create_paid_order_and_reuses_grant(app, client):
+    first = client.post("/free-access")
+    assert first.status_code == 200
+    assert b"FREE ACCESS ACTIVE" in first.data
+    with app.app_context():
+        assert LicenseOrder.query.count() == 0
+        assert FreeAccessGrant.query.count() == 1
+        grant_id = FreeAccessGrant.query.first().id
+
+    second = client.post("/free-access")
+    assert second.status_code == 200
+    with app.app_context():
+        assert LicenseOrder.query.count() == 0
+        assert FreeAccessGrant.query.count() == 1
+        assert FreeAccessGrant.query.first().id == grant_id
+
+
+def test_legacy_company_is_retired_without_losing_history(app, client):
+    with app.app_context():
+        legacy = Plan(code="COMPANY", name="Company", type="COMPANY", price=179.99, duration_days=365, max_devices=10)
+        db.session.add(legacy)
+        db.session.commit()
+        from license_server.services.plan_service import ensure_default_plans
+        ensure_default_plans()
+        assert db.session.get(Plan, legacy.id).active is False
+        assert Plan.query.filter_by(code="COMPANY").count() == 1
+
+
+def test_admin_plans_list_shows_only_active_catalog(app, client):
+    token = login(client)
+    with app.app_context():
+        legacy_company = Plan.query.filter_by(code="COMPANY").one()
+        lifetime = Plan.query.filter_by(code="LIFETIME").one()
+        legacy_company.active = False
+        lifetime.active = False
+        db.session.commit()
+
+    response = client.get("/admin/plans")
+    assert response.status_code == 200
+    assert b"COMPANY</small>" not in response.data
+    assert b"LIFETIME</small>" not in response.data
+    assert b"MONTHLY</small>" in response.data
 
 
 def test_admin_reset_requires_auth_confirmation_and_preserves_configuration(app, client):
